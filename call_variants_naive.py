@@ -1,4 +1,3 @@
-from typing import List
 import pysam
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
@@ -63,8 +62,8 @@ for pileupColumn in pileupColumns:
                 positions[-1]['calls']['G'], (positions[-1]['calls']['G'] / float(positions[-1]['num_reads']))
             )
             
+bamFile.close()
+fastaFile.close()
 
 print(fileContent)
 
-bamFile.close()
-fastaFile.close()
