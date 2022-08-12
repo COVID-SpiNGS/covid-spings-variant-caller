@@ -4,30 +4,41 @@ import numpy as np
 minDepth = 10
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
-fileContent = ''
+vcfHeader = pysam.VariantHeader()
 
-# should be 30175
+for reference in fastaFile.references:
+    vcfHeader.contigs.add(
+        reference,
+        fastaFile.get_reference_length(reference)
+    )
+    
+vcfFile = pysam.VariantFile('output/call_variants_genotype_likelihood_vcf.vcf', mode='w', header=vcfHeader)
 pileupColumns = bamFile.pileup(min_base_quality=13)
 
-fileContent += '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (
-    'POS', 
-    'REF', 
-    'NUM', 
-    'A', 'A%',
-    'T', 'T%',
-    'C', 'C%',
-    'G', 'G%'
-)
-
-def is_relevant_position(position, minNumReads=minDepth):
+def get_alternative(position, minNumReads=minDepth):
     if(position['numReads'] >= minNumReads):
         alt = max(position['calls'], key=position['calls'].get)
-        return alt != position['ref']
-    else:
-        return False
+        meanErrorProbability = position['errorProbabilities'][alt].mean()
+        #phredQualityScore = error_probability_to_phred_quality_score(meanErrorProbability)
+        phredQualityScore = genotype_likelihood(alt, position)
 
-def quality_to_error_probability(quality: int):
+        return {
+            'isRelevant': alt != position['ref'],
+            'alt': alt,
+            'qual': phredQualityScore
+        }
+    else:
+        return {
+            'isRelevant': False,
+            'alt': None,
+            'qual': 0.0
+        }
+
+def phred_quality_score_to_error_probability(quality: float):
     return np.power(10, quality / -10)
+
+def error_probability_to_phred_quality_score(errorProbability: float):
+    return -10 * np.log10(errorProbability) if errorProbability > 0.0 else 100.0
 
 def genotype_likelihood(ref: str, position): 
     if ref == 'A':
@@ -50,6 +61,7 @@ def genotype_likelihood(ref: str, position):
             * position['errorProbabilities']['T'].prod() \
             * position['errorProbabilities']['C'].prod() \
             * (1.0 - position['errorProbabilities']['G']).prod()
+
 
 positions = []
 for pileupColumn in pileupColumns:
@@ -84,26 +96,27 @@ for pileupColumn in pileupColumns:
         for pileup in pileupColumn.pileups:
             if not pileup.is_del and not pileup.is_refskip:
                 alt = pileup.alignment.query_sequence[pileup.query_position]
-                errorProbability = quality_to_error_probability(pileup.alignment.query_qualities[pileup.query_position])
+                errorProbability = phred_quality_score_to_error_probability(pileup.alignment.query_qualities[pileup.query_position])
 
                 positions[-1]['calls'][alt] += 1
                 positions[-1]['numReads'] += 1
                 positions[-1]['errorProbabilities'][alt] = np.append(positions[-1]['errorProbabilities'][alt], errorProbability)
                 positions[-1]['phredQualityScores'][alt] = np.append(positions[-1]['phredQualityScores'][alt], pileup.alignment.query_qualities[pileup.query_position])
 
-        if(is_relevant_position(positions[-1])):
-            fileContent += '%i\t%s\t%i\t%i\t%f\t%i\t%f\t%i\t%f\t%i\t%f\n' % (
-                positions[-1]['pos'] + 1, 
-                positions[-1]['ref'], 
-                positions[-1]['numReads'], 
-                len(positions[-1]['errorProbabilities']['A']), genotype_likelihood('A', positions[-1]),
-                len(positions[-1]['errorProbabilities']['T']), genotype_likelihood('T', positions[-1]),
-                len(positions[-1]['errorProbabilities']['C']), genotype_likelihood('C', positions[-1]),
-                len(positions[-1]['errorProbabilities']['G']), genotype_likelihood('G', positions[-1]),
+        alternative = get_alternative(positions[-1])
+        if alternative['isRelevant']:
+            vcfRecord = vcfFile.new_record(
+                start=positions[-1]['pos'], 
+                stop=positions[-1]['pos'] + 1,
+                alleles=(
+                    positions[-1]['ref'], 
+                    alternative['alt']
+                ),
+                qual=alternative['qual']
             )
+
+            vcfFile.write(vcfRecord)
 
 bamFile.close()
 fastaFile.close()
-
-print(fileContent)
-
+vcfFile.close()

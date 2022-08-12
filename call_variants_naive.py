@@ -1,9 +1,8 @@
 import pysam
 
+minDepth = 10
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
-min_depth = 10
-probabilities = []
 fileContent = ''
 
 # should be 30175
@@ -19,10 +18,10 @@ fileContent += '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (
 )
 
 
-def is_relevant_position(position, min_num_reads=min_depth):
-    if(position['num_reads'] >= min_num_reads):
-        readBase = max(position['calls'], key=position['calls'].get)
-        return readBase != position['base']
+def is_relevant_position(position, minNumReads=minDepth):
+    if(position['numReads'] >= minNumReads):
+        alt = max(position['calls'], key=position['calls'].get)
+        return alt != position['base']
     else:
         return False
 
@@ -30,12 +29,12 @@ positions = []
 for pileupColumn in pileupColumns:
     depth = len(pileupColumn.pileups)
 
-    if depth >= min_depth:
+    if depth >= minDepth:
         reference = fastaFile.fetch(reference=pileupColumn.reference_name)
         positions.append({
-            'position': pileupColumn.reference_pos,
-            'base': reference[pileupColumn.reference_pos],
-            'num_reads': 0,
+            'pos': pileupColumn.reference_pos,
+            'ref': reference[pileupColumn.reference_pos],
+            'numReads': 0,
             'calls': {
                 'A': 0,
                 'T': 0,
@@ -46,20 +45,20 @@ for pileupColumn in pileupColumns:
 
         for pileup in pileupColumn.pileups:
             if not pileup.is_del and not pileup.is_refskip:
-                readBase = pileup.alignment.query_sequence[pileup.query_position]
-                positions[-1]['calls'][readBase] += 1
-                positions[-1]['num_reads'] += 1
+                alt = pileup.alignment.query_sequence[pileup.query_position]
+                positions[-1]['calls'][alt] += 1
+                positions[-1]['numReads'] += 1
 
 
         if is_relevant_position(positions[-1]):
             fileContent += '%i\t%s\t%i\t%i\t%f\t%i\t%f\t%i\t%f\t%i\t%f\n' % (
-                positions[-1]['position'], 
-                positions[-1]['base'], 
-                positions[-1]['num_reads'],
-                positions[-1]['calls']['A'], (positions[-1]['calls']['A'] / float(positions[-1]['num_reads'])),
-                positions[-1]['calls']['T'], (positions[-1]['calls']['T'] / float(positions[-1]['num_reads'])),
-                positions[-1]['calls']['C'], (positions[-1]['calls']['C'] / float(positions[-1]['num_reads'])),
-                positions[-1]['calls']['G'], (positions[-1]['calls']['G'] / float(positions[-1]['num_reads']))
+                positions[-1]['pos'] + 1, 
+                positions[-1]['ref'], 
+                positions[-1]['numReads'],
+                positions[-1]['calls']['A'], (positions[-1]['calls']['A'] / float(positions[-1]['numReads'])),
+                positions[-1]['calls']['T'], (positions[-1]['calls']['T'] / float(positions[-1]['numReads'])),
+                positions[-1]['calls']['C'], (positions[-1]['calls']['C'] / float(positions[-1]['numReads'])),
+                positions[-1]['calls']['G'], (positions[-1]['calls']['G'] / float(positions[-1]['numReads']))
             )
             
 bamFile.close()
