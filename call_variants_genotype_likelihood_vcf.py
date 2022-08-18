@@ -3,7 +3,7 @@ import pysam
 import numpy as np
 from config import minDepth
 from structs import Position
-from utils import genotype_likelihood, to_error_probability, to_phred_quality_score
+from utils import genotype_likelihood, to_error_probability, to_phred_quality_score, to_genotype_quality
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
@@ -21,12 +21,12 @@ pileupColumns = bamFile.pileup(min_base_quality=13)
 def get_alternative(position, minNumReads=minDepth):
     if(position['numReads'] >= minNumReads):
         alt = max(position['calls'], key=position['calls'].get)
-        phredQualityScore = to_phred_quality_score(1.0 - genotype_likelihood(alt, position))  
+        qual = to_genotype_quality(genotype_likelihood(alt, position))  
 
         return {
             'isRelevant': alt != position['ref'],
             'alt': alt,
-            'qual': phredQualityScore
+            'qual': qual
         }
     else:
         return {

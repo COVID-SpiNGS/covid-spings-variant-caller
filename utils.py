@@ -42,3 +42,5 @@ def genotype_likelihood(ref: str, position):
             * position['errorProbabilities']['C'].prod() \
             * (1.0 - position['errorProbabilities']['G']).prod()
 
+def to_genotype_quality(genotypeLikelihood: float):
+    return np.round(to_phred_quality_score(1.0 - genotypeLikelihood), 0)
