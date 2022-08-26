@@ -1,3 +1,4 @@
-minDepth = 10
-minBaseQuality = 5
-minMappingQuality = 5
+minRawDepth = 10
+minAlleleDepth = 5
+minMappingQuality = 20
+minBaseQuality = 30
