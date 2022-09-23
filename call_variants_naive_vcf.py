@@ -1,7 +1,7 @@
 
 import pysam
 import numpy as np
-from config import minRawDepth, minAlleleDepth, minMappingQuality, minBaseQuality
+from config import minTotalDepth, minCandidatesDepth, minMappingQuality, minBaseQuality
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
@@ -55,7 +55,7 @@ pileupColumns = bamFile.pileup(
     min_base_quality=minBaseQuality
 )
 
-def get_alternative(position, minAlleleDepth=minAlleleDepth):
+def get_alternative(position, minAlleleDepth=minCandidatesDepth):
     if(position['alleleDepth'] >= minAlleleDepth):
         alt = max(position['alleleFrequency'], key=position['alleleFrequency'].get)
         errorProbability = 1.0 - (position['alleleFrequency'][alt] / float(position['rawDepth']))
@@ -77,7 +77,7 @@ positions = []
 for pileupColumn in pileupColumns:
     rawDepth = len(pileupColumn.pileups)
 
-    if rawDepth >= minRawDepth:
+    if rawDepth >= minTotalDepth:
         reference = fastaFile.fetch(reference=pileupColumn.reference_name)
         positions.append({
             'pos': pileupColumn.reference_pos,

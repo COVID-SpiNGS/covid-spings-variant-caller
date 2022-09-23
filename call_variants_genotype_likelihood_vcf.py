@@ -7,50 +7,14 @@ import operator
 import numpy as np
 
 
-from config import minRawDepth, minAlleleDepth, minMappingQuality, minBaseQuality
+from config import minTotalDepth, minCandidatesDepth, minMappingQuality, minBaseQuality
 from structs import Position
-from utils import genotype_likelihood, error_probability, to_error_probability, to_genotype_quality
+from utils import genotype_likelihood, error_probability, to_error_probability, to_phred_scale
 
 
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
-vcfHeader = pysam.VariantHeader()
-
-vcfHeader.add_meta('INFO', items=[
-    ('ID', 'DP'),
-    ('Number', 1),
-    ('Type', 'Integer'),
-    ('Description', 'Raw Depth')
-])
-
-vcfHeader.add_meta('INFO', items=[
-    ('ID', 'AD'),
-    ('Number', 1),
-    ('Type', 'Integer'),
-    ('Description', 'Allele Depth')
-])
-
-vcfHeader.add_meta('INFO', items=[
-    ('ID', 'MBQ'),
-    ('Number', 4),
-    ('Type', 'Float'),
-    ('Description', 'Mean Allele Base Qualities (A, T, C, G)')
-])
-
-vcfHeader.add_meta('INFO', items=[
-    ('ID', 'MMQ'),
-    ('Number', 4),
-    ('Type', 'Float'),
-    ('Description', 'Mean Allele Mapping Qualities (A, T, C, G)')
-])
-
-vcfHeader.add_meta('INFO', items=[
-    ('ID', 'AF'),
-    ('Number', 4),
-    ('Type', 'Integer'),
-    ('Description', 'Allele Frequency (A, T, C, G)')
-])
 
 for reference in fastaFile.references:
     vcfHeader.contigs.add(
@@ -65,14 +29,8 @@ pileupColumns = bamFile.pileup(
     min_base_quality=minBaseQuality,
 )
 
-def get_alternative(position, minAlleleDepth=minAlleleDepth):
+def get_alternative(position, minAlleleDepth=minCandidatesDepth):
     if(position['alleleDepth'] >= minAlleleDepth):
-        alt = max(position['alleleFrequency'], key=position['alleleFrequency'].get)
-        # qual = to_genotype_quality(genotype_likelihood(alt, position, 'alleleErrorProbabilities'))  
-        qual = error_probability(alt, position, 'alleleErrorProbabilities')
-
-        # if position['pos'] == 18873:
-            # print(position)
         genotypeLikelihoods = {
             base: (
                 genotype_likelihood(base, position, 'alleleErrorProbabilities') 
@@ -82,7 +40,6 @@ def get_alternative(position, minAlleleDepth=minAlleleDepth):
             for base in position['alleleErrorProbabilities'].keys()
         }
 
-
         sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values())
 
         pValues = {
@@ -90,30 +47,8 @@ def get_alternative(position, minAlleleDepth=minAlleleDepth):
             for base in genotypeLikelihoods.keys()
         }
 
-
-        # print('genotypeLikelihoods', genotypeLikelihoods)
-        if position['pos'] == 18873:
-            print("")
-           # print("")
-            #print("")
-            # print('genotypeLikelihoods', genotypeLikelihoods)
-            # print('genotypeLikelihoodRatios', genotypeLikelihoodRatios)
-            # print('pValues', pValues)
-
-
-           # print("")
-           # print("")
-            print("")
-
-            # print('pValues', pValues)
-        # print('pValues', pValues)
-
-        # alt = min(pValues, key=pValues.get)
-        # qual = pValues[alt]
-        # qual = to_genotype_quality(pValues[alt])  
-
-        # How to go from likelihoodRatio to p-value
-            
+        alt = max(position['alleleFrequency'], key=position['alleleFrequency'].get)
+        qual = to_phred_scale(pValues[alt])  
 
         return {
             'isRelevant': alt != position['ref'],
@@ -131,7 +66,7 @@ positions: List[Position] = []
 for pileupColumn in pileupColumns:
     rawDepth = len(pileupColumn.pileups)
 
-    if rawDepth >= minRawDepth:
+    if rawDepth >= minTotalDepth:
         reference = fastaFile.fetch(reference=pileupColumn.reference_name)
         positions.append({
             'pos': pileupColumn.reference_pos + 1,
@@ -175,7 +110,6 @@ for pileupColumn in pileupColumns:
                 alt = pileup.alignment.query_sequence[pileup.query_position]
                 phredQuality = pileup.alignment.query_qualities[pileup.query_position]
                 errorProbability = to_error_probability(phredQuality)
-                # errorProbability = 0.01
 
                 positions[-1]['alleleFrequency'][alt] += 1
 
@@ -200,52 +134,8 @@ for pileupColumn in pileupColumns:
             + positions[-1]['alleleFrequency']['G']
 
 
-def sigmoid(x):
-    # return 0.5
-    return 1.0 / (1.0 + np.exp(-x))
-
-def standard_score(x, mean, std):
-    if(std > 0):
-        return (x - mean) / std
-    else: 
-        return x
-
-def feature_scaling(x, a=0.001, b=0.999):
-    xMin = np.min(x)
-    xMax = np.max(x)
-
-    return (b - a) * (x - xMin) / (xMax - xMin) + a
-
-
 
 for position in positions:
-
-    allAlleleErrorProbabilities = np.concatenate((
-        position['alleleErrorProbabilities']['A'], 
-        position['alleleErrorProbabilities']['T'],
-        position['alleleErrorProbabilities']['C'],
-        position['alleleErrorProbabilities']['G']
-    ), axis=0)
-
-    allMean = np.mean(allAlleleErrorProbabilities) if len(allAlleleErrorProbabilities) else 0.0
-    allStd = np.std(allAlleleErrorProbabilities) if len(allAlleleErrorProbabilities) else 1.0
-
-    ## print(allAlleleErrorProbabilities)
-    ## print(allMean, allStd)
-
-    
-    position['recalibratedAlleleErrorProbabilities'] = {
-        'A': sigmoid(standard_score(position['alleleErrorProbabilities']['A'], allMean, allStd)),
-        'C': sigmoid(standard_score(position['alleleErrorProbabilities']['C'], allMean, allStd)),
-        'T': sigmoid(standard_score(position['alleleErrorProbabilities']['T'], allMean, allStd)),
-        'G': sigmoid(standard_score(position['alleleErrorProbabilities']['G'], allMean, allStd)),
-    }
-
-    # print(position['alleleErrorProbabilities'])
-    # print(position['recalibratedAlleleErrorProbabilities'
-
-
-
     alternative = get_alternative(position)
 
     if alternative['isRelevant']:

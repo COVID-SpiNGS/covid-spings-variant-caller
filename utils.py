@@ -61,5 +61,5 @@ def error_probability(hypothesis: str, position: Position, key='alleleErrorProba
 
 
 
-def to_genotype_quality(genotypeLikelihood: float):
+def to_phred_scale(genotypeLikelihood: float):
     return np.round(to_phred_quality_score(1.0 - genotypeLikelihood), 0)

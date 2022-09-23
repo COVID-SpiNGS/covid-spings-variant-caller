@@ -20,13 +20,15 @@ class PhredQualityScores(TypedDict):
     C: np.ndarray
 
 class Position(TypedDict):
-    pos: int
-    ref: str
-    numReads: int
-    calls: Calls
-    alleleErrorProbabilities: ErrorProbabilities
-    recalibratedAlleleErrorProbabilities: ErrorProbabilities
-    alleleBaseQualities: PhredQualityScores
-    alleleMappingQualities: PhredQualityScores
+    totalDepth: int
+    candidatesDepth: int
+    baseFrequencies: Calls
+    baseQualities: PhredQualityScores
+    mappingQualities: PhredQualityScores
+    baseErrorProbabilities: ErrorProbabilities
 
-positions: List[Position] = []
+
+class Alternative(TypedDict):
+    isRelevant: bool
+    alt: str
+    qual: int

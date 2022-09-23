@@ -1,9 +1,9 @@
 from typing import List
 import pysam
 import numpy as np
-from config import minRawDepth, minAlleleDepth, minMappingQuality, minBaseQuality
+from config import minTotalDepth, minCandidatesDepth, minMappingQuality, minBaseQuality
 from structs import Position
-from utils import genotype_likelihood, to_error_probability, to_phred_quality_score, to_genotype_quality
+from utils import genotype_likelihood, to_error_probability, to_phred_quality_score, to_phred_scale
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
@@ -57,10 +57,10 @@ pileupColumns = bamFile.pileup(
     min_base_quality=minBaseQuality,
 )
 
-def get_alternative(position, minAlleleDepth=minAlleleDepth):
+def get_alternative(position, minAlleleDepth=minCandidatesDepth):
     if(position['alleleDepth'] >= minAlleleDepth):
         alt = max(position['alleleFrequency'], key=position['alleleFrequency'].get)
-        qual = to_genotype_quality(genotype_likelihood(alt, position))  
+        qual = to_phred_scale(genotype_likelihood(alt, position))  
 
         return {
             'isRelevant': alt != position['ref'],
@@ -78,7 +78,7 @@ positions: List[Position] = []
 for pileupColumn in pileupColumns:
     rawDepth = len(pileupColumn.pileups)
 
-    if rawDepth >= minRawDepth:
+    if rawDepth >= minTotalDepth:
         reference = fastaFile.fetch(reference=pileupColumn.reference_name)
         positions.append({
             'pos': pileupColumn.reference_pos,
