@@ -24,7 +24,9 @@ class Position(TypedDict):
     ref: str
     numReads: int
     calls: Calls
-    errorProbabilities: ErrorProbabilities
-    phredQualityScores: PhredQualityScores
+    alleleErrorProbabilities: ErrorProbabilities
+    recalibratedAlleleErrorProbabilities: ErrorProbabilities
+    alleleBaseQualities: PhredQualityScores
+    alleleMappingQualities: PhredQualityScores
 
 positions: List[Position] = []
