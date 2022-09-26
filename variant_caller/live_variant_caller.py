@@ -1,12 +1,19 @@
+
+from cmath import isnan
 import functools
 import operator
+import pickle
 import pysam
 import numpy as np
+from tqdm import tqdm
+import math
 
 from pysam import AlignedSegment
 from structs import Alternative, Position
+from time import strftime, localtime
+ 
 
-from utils import error_probability, genotype_likelihood, to_error_probability, to_phred_scale, to_phred_quality_score
+from utils import error_probability, genotype_likelihood, from_phred_scale, to_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
 
@@ -23,16 +30,25 @@ class LiveVariantCaller:
     def __del__(self):
         self.fastaFile.close()
 
-    def process_bam(self, inputBam: str):
+    def process_bam(self, inputBam: str, referenceIndex=0):
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
         
         pileupColumns = bamFile.pileup(
             min_mapping_quality=self.minMappingQuality,
             min_base_quality=self.minBaseQuality,
+            reference=self.fastaFile.references[referenceIndex]
         )
 
-        for pileupColumn in pileupColumns:
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        progressBar = tqdm(
+            pileupColumns, 
+            desc=f'{timestamp} Processing {inputBam}',
+            total=bamFile.get_reference_length(self.fastaFile.references[referenceIndex])
+        )
+
+        for pileupColumn in progressBar:
             self.process_pileup_column(pileupColumn)
+
 
         bamFile.close()
 
@@ -52,22 +68,22 @@ class LiveVariantCaller:
                     'G': 0,
                 },
                 'baseQualities': {
-                    'A': np.array([]),
-                    'T': np.array([]),
-                    'C': np.array([]),
-                    'G': np.array([])
+                    'A': [],
+                    'T': [],
+                    'C': [],
+                    'G': []
                 },
                 'mappingQualities': {
-                    'A': np.array([]),
-                    'T': np.array([]),
-                    'C': np.array([]),
-                    'G': np.array([])
+                    'A': [],
+                    'T': [],
+                    'C': [],
+                    'G': []
                 },
                 'baseErrorProbabilities': {
-                    'A': np.array([]),
-                    'T': np.array([]),
-                    'C': np.array([]),
-                    'G': np.array([])
+                    'A': [],
+                    'T': [],
+                    'C': [],
+                    'G': []
                 },
             }
         else:
@@ -87,33 +103,39 @@ class LiveVariantCaller:
             alt = pileup.alignment.query_sequence[pileup.query_position]
             self.memory[position]['baseFrequencies'][alt] += 1
 
-
-            self.memory[position]['baseQualities'][alt] = np.append(
-                self.memory[position]['baseQualities'][alt], 
-                pileup.alignment.query_qualities[pileup.query_position]
-            )
-
-            self.memory[position]['mappingQualities'][alt] = np.append(
-                self.memory[position]['mappingQualities'][alt], 
-                pileup.alignment.mapping_quality
-            )
-
-
-            self.memory[position]['baseErrorProbabilities'][alt] = np.append(
-                self.memory[position]['baseErrorProbabilities'][alt], 
-                to_error_probability(pileup.alignment.query_qualities[pileup.query_position])
-            )
+            self.memory[position]['baseQualities'][alt].append(pileup.alignment.query_qualities[pileup.query_position])
+            self.memory[position]['mappingQualities'][alt].append(pileup.alignment.mapping_quality)
+            self.memory[position]['baseErrorProbabilities'][alt].append(from_phred_scale(pileup.alignment.query_qualities[pileup.query_position]))
 
 
     def reset_memory(self):
         self.memory: dict[int, Position] = {}
+
+    def create_checkpoint(self, filename):
+        file = open(filename, 'wb')
+        pickle.dump(self.memory, file)
+        file.close()
+
+    def load_checkpoint(self, filename):
+        file = open(filename, 'rb')
+        self.memory,  = pickle.load(file)
+        file.close()
 
     def get_alternative(self, position: Position) -> Alternative:
         if(position['candidatesDepth'] >= self.minCandidatesDepth):
             genotypeLikelihoods = {
                 base: (
                     genotype_likelihood(base, position, 'baseErrorProbabilities') 
-                    if len(position['baseErrorProbabilities'][base] > 0)
+                    if len(position['baseErrorProbabilities'][base]) > 0
+                    else 0.0
+                )
+                for base in position['baseErrorProbabilities'].keys()
+            }
+
+            baseErrorProbabilityMeans = {
+                base: (
+                    np.mean(position['baseErrorProbabilities'][base])
+                    if len(position['baseErrorProbabilities'][base]) > 0
                     else 0.0
                 )
                 for base in position['baseErrorProbabilities'].keys()
@@ -121,13 +143,15 @@ class LiveVariantCaller:
 
             sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values())
 
-            pValues = {
-                base: (genotypeLikelihoods[base] / sumGenotypeLikelihoods)
-                for base in genotypeLikelihoods.keys()
-            }
+            # pValues = {
+            #     base: (genotypeLikelihoods[base] / sumGenotypeLikelihoods) if sumGenotypeLikelihoods != 0 else 1.0
+            #     for base in genotypeLikelihoods.keys()
+            # }
 
             alt = max(position['baseFrequencies'], key=position['baseFrequencies'].get)
-            qual = to_phred_scale(pValues[alt])  
+            # qual = pValues[alt]
+            # qual = to_phred_scale(1.0 - pValues[alt])  
+            qual = to_phred_scale(baseErrorProbabilityMeans[alt])
 
             return {
                 'isRelevant': alt != position['ref'],
@@ -142,6 +166,8 @@ class LiveVariantCaller:
             }
 
     def write_vcf(self, outputVfc: str):
+        print(strftime('[%Y-%m-%d %H:%M:%S]', localtime()), 'Writing to', outputVfc, '...')    
+
         vcfHeader = pysam.VariantHeader()
 
         vcfHeader.add_meta('INFO', items=[

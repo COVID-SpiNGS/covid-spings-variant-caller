@@ -3,7 +3,7 @@ import pysam
 import numpy as np
 from config import minTotalDepth, minCandidatesDepth, minMappingQuality, minBaseQuality
 from structs import Position
-from utils import genotype_likelihood, to_error_probability, to_phred_quality_score, to_phred_scale
+from utils import genotype_likelihood, from_phred_scale, to_phred_scale, to_phred_scale
 
 fastaFile = pysam.FastaFile('input/reference.fasta')
 bamFile = pysam.AlignmentFile('input/input.bam', 'rb')
@@ -114,7 +114,7 @@ for pileupColumn in pileupColumns:
         for pileup in pileupColumn.pileups:
             if not pileup.is_del and not pileup.is_refskip:
                 alt = pileup.alignment.query_sequence[pileup.query_position]
-                errorProbability = to_error_probability(pileup.alignment.query_qualities[pileup.query_position])
+                errorProbability = from_phred_scale(pileup.alignment.query_qualities[pileup.query_position])
 
                 positions[-1]['alleleFrequency'][alt] += 1
 

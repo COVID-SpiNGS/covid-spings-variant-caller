@@ -4,22 +4,22 @@ import numpy as np
 
 from structs import Position
 
-def to_error_probability(phredQualityScore: float):
-    return np.power(10, phredQualityScore / -10)
+def from_phred_scale(score: float):
+    return np.power(10, score / -10)
 
-def to_phred_quality_score(errorProbability: float, maxThreshold: float = 99):
-    if  errorProbability > 0.0:
-        score = np.abs(np.multiply(np.log10(errorProbability), -10))
+def to_phred_scale(probability: float, threshold: float = 99):
+    if  probability > 0.0:
+        score = np.abs(np.multiply(np.log10(probability), -10))
 
-        if score <= maxThreshold:
+        if score <= threshold:
             return score
 
-    return maxThreshold
+    return threshold
 # recalibratedAlleleErrorProbabilities , alleleErrorProbabilities
-def genotype_likelihood(hypothesis: str, position: Position, key='alleleErrorProbabilities'): 
-    hypothesisValue = (1.0 - position[key][hypothesis]).prod()
+def genotype_likelihood(hypothesis: str, position: Position, key='baseErrorProbabilities'): 
+    hypothesisValue = (1.0 - np.array(position[key][hypothesis])).prod()
     alternativeValue = functools.reduce(operator.mul, {
-        base: position[key][base].prod()
+        base: np.array(position[key][base]).prod()
         for base in position[key].keys()
         if base != hypothesis
     }.values())
@@ -27,7 +27,7 @@ def genotype_likelihood(hypothesis: str, position: Position, key='alleleErrorPro
     return hypothesisValue * alternativeValue
 
 
-def error_probability(hypothesis: str, position: Position, key='alleleErrorProbabilities'): 
+def error_probability(hypothesis: str, position: Position, key='baseErrorProbabilities'): 
     numHypothesis = len(position[key][hypothesis])
     numAlternative = functools.reduce(operator.add, {
         base: len(position[key][base])
@@ -60,6 +60,3 @@ def error_probability(hypothesis: str, position: Position, key='alleleErrorProba
         return hypothesisValue
 
 
-
-def to_phred_scale(genotypeLikelihood: float):
-    return np.round(to_phred_quality_score(1.0 - genotypeLikelihood), 0)

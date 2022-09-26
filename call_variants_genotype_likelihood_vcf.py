@@ -9,7 +9,7 @@ import numpy as np
 
 from config import minTotalDepth, minCandidatesDepth, minMappingQuality, minBaseQuality
 from structs import Position
-from utils import genotype_likelihood, error_probability, to_error_probability, to_phred_scale
+from utils import genotype_likelihood, error_probability, from_phred_scale, to_phred_scale
 
 
 
@@ -109,7 +109,7 @@ for pileupColumn in pileupColumns:
             if not pileup.is_del and not pileup.is_refskip:
                 alt = pileup.alignment.query_sequence[pileup.query_position]
                 phredQuality = pileup.alignment.query_qualities[pileup.query_position]
-                errorProbability = to_error_probability(phredQuality)
+                errorProbability = from_phred_scale(phredQuality)
 
                 positions[-1]['alleleFrequency'][alt] += 1
 

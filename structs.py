@@ -8,16 +8,15 @@ class Calls(TypedDict):
     C: int
 
 class ErrorProbabilities(TypedDict):
-    A: np.ndarray
-    T: np.ndarray
-    G: np.ndarray
-    C: np.ndarray
-
+    A: List[float]
+    T: List[float]
+    G: List[float]
+    C: List[float]
 class PhredQualityScores(TypedDict):
-    A: np.ndarray
-    T: np.ndarray
-    G: np.ndarray
-    C: np.ndarray
+    A: List[float]
+    T: List[float]
+    G: List[float]
+    C: List[float]
 
 class Position(TypedDict):
     totalDepth: int
