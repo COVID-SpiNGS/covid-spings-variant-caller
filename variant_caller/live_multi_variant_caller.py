@@ -220,10 +220,6 @@ class LiveMultiVariantCaller:
                             }
                         })
 
-
-                if len(variants) > 1: 
-                    pprint(variants)
-
                 for index, variant in enumerate(sorted(variants, key=lambda v: v['info']['SCORE'])):
                     if self.maxVariants == 0 or index < self.maxVariants:
                         vcfFile.write(
