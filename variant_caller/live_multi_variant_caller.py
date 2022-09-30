@@ -98,11 +98,17 @@ class LiveMultiVariantCaller:
         self.memory: dict[int, MultiPosition] = {}
 
     def create_checkpoint(self, filename):
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        print(f'{timestamp} Creating checkpoint {filename}')
+
         file = open(filename, 'wb')
         pickle.dump(self.memory, file)
         file.close()
 
     def load_checkpoint(self, filename):
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        print(f'{timestamp} Loading checkpoint {filename}')
+
         file = open(filename, 'rb')
         self.memory,  = pickle.load(file)
         file.close()
@@ -181,7 +187,6 @@ class LiveMultiVariantCaller:
                     for allele in genotypeLikelihoods.keys()
                 }
 
-
                 variants = []
 
                 for allele in self.memory[position]['alleles'].keys():
@@ -220,7 +225,7 @@ class LiveMultiVariantCaller:
                             }
                         })
 
-                for index, variant in enumerate(sorted(variants, key=lambda v: v['info']['SCORE'])):
+                for index, variant in enumerate(sorted(variants, key=lambda variant: variant['info']['SCORE'])):
                     if self.maxVariants == 0 or index < self.maxVariants:
                         vcfFile.write(
                             vcfFile.new_record(
