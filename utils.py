@@ -1,6 +1,8 @@
 import operator
 import functools
+from typing import Dict, List
 import numpy as np
+import math
 
 from structs import Position
 
@@ -25,6 +27,18 @@ def genotype_likelihood(hypothesis: str, position: Position, key='baseErrorProba
     }.values())
 
     return hypothesisValue * alternativeValue
+
+def calculate_genotype_likelihood(hypothesis: str, alleles: Dict[str, List[float]]): 
+    hypothesisValue = (1.0 - np.array(alleles[hypothesis])).prod()
+    nonHypothesisValue = functools.reduce(operator.mul, {
+        allele: np.array(alleles[allele]).prod()
+        for allele in alleles
+        if allele != hypothesis
+    }.values(), 1.0)
+
+    return hypothesisValue * nonHypothesisValue
+
+
 
 
 def error_probability(hypothesis: str, position: Position, key='baseErrorProbabilities'): 

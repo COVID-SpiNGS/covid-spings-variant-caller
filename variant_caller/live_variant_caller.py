@@ -1,19 +1,16 @@
-
-from cmath import isnan
 import functools
 import operator
 import pickle
 import pysam
 import numpy as np
 from tqdm import tqdm
-import math
 
 from pysam import AlignedSegment
 from structs import Alternative, Position
 from time import strftime, localtime
  
 
-from utils import error_probability, genotype_likelihood, from_phred_scale, to_phred_scale, to_phred_scale
+from utils import genotype_likelihood, from_phred_scale, to_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
 
@@ -59,7 +56,7 @@ class LiveVariantCaller:
             reference = self.fastaFile.fetch(reference=pileupColumn.reference_name)
 
             self.memory[pileupColumn.reference_pos] = {
-                'ref': reference[pileupColumn.reference_pos],
+                'reference': reference[pileupColumn.reference_pos],
                 'totalDepth': totalDepth,
                 'baseFrequencies': {
                     'A': 0,
@@ -132,29 +129,19 @@ class LiveVariantCaller:
                 for base in position['baseErrorProbabilities'].keys()
             }
 
-            baseErrorProbabilityMeans = {
-                base: (
-                    np.mean(position['baseErrorProbabilities'][base])
-                    if len(position['baseErrorProbabilities'][base]) > 0
-                    else 0.0
-                )
-                for base in position['baseErrorProbabilities'].keys()
-            }
-
             sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values())
 
-            # pValues = {
-            #     base: (genotypeLikelihoods[base] / sumGenotypeLikelihoods) if sumGenotypeLikelihoods != 0 else 1.0
-            #     for base in genotypeLikelihoods.keys()
-            # }
+            pValues = {
+                base: (genotypeLikelihoods[base] / sumGenotypeLikelihoods) if sumGenotypeLikelihoods != 0 else 1.0
+                for base in genotypeLikelihoods.keys()
+            }
 
             alt = max(position['baseFrequencies'], key=position['baseFrequencies'].get)
             # qual = pValues[alt]
-            # qual = to_phred_scale(1.0 - pValues[alt])  
-            qual = to_phred_scale(baseErrorProbabilityMeans[alt])
+            qual = to_phred_scale(1.0 - pValues[alt])  
 
             return {
-                'isRelevant': alt != position['ref'],
+                'isRelevant': alt != position['reference'],
                 'alt': alt,
                 'qual': qual
             }
@@ -222,7 +209,7 @@ class LiveVariantCaller:
                         start=index, 
                         stop=index + 1,
                         alleles=(
-                            self.memory[index]['ref'], 
+                            self.memory[index]['reference'], 
                             alternative['alt']
                         ),
                         qual=alternative['qual'],

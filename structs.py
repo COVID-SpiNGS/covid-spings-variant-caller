@@ -1,5 +1,6 @@
+from re import A, T
 import numpy as np
-from typing import List, TypedDict
+from typing import Dict, List, TypedDict
 
 class Calls(TypedDict):
     A: int
@@ -19,6 +20,7 @@ class PhredQualityScores(TypedDict):
     C: List[float]
 
 class Position(TypedDict):
+    reference: str
     totalDepth: int
     candidatesDepth: int
     baseFrequencies: Calls
@@ -31,3 +33,15 @@ class Alternative(TypedDict):
     isRelevant: bool
     alt: str
     qual: int
+
+
+class Allele(TypedDict):
+    evidenceDepth: int
+    baseErrorProbabilities: List[float]
+    baseQualities: List[float]
+    mappingQualities: List[float]
+
+class MultiPosition(TypedDict):
+    reference: str
+    totalDepth: int
+    alleles: Dict[str, Allele]
