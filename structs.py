@@ -44,4 +44,5 @@ class Allele(TypedDict):
 class MultiPosition(TypedDict):
     reference: str
     totalDepth: int
-    alleles: Dict[str, Allele]
+    baseQualities: Dict[str, List[int]]
+    mappingQualities: Dict[str, List[int]]

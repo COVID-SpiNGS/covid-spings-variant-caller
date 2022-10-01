@@ -6,7 +6,7 @@ import math
 
 from structs import Position
 
-def from_phred_scale(score: float):
+def from_phred_scale(score: float) -> float:
     return np.power(10, score / -10)
 
 def to_phred_scale(probability: float, threshold: float = 99):

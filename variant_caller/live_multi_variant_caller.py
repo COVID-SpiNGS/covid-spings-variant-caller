@@ -10,7 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from pysam import AlignedSegment
-from structs import MultiPosition
+from structs import ErrorProbabilities, MultiPosition
 from time import strftime, localtime
 
  
@@ -65,7 +65,7 @@ class LiveMultiVariantCaller:
             self.memory[pileupColumn.reference_pos] = {
                 'reference': reference[pileupColumn.reference_pos],
                 'totalDepth': totalDepth,
-                'alleles': {}
+                'baseQualities': {}
             }
         else:
             self.memory[pileupColumn.reference_pos]['totalDepth'] += totalDepth
@@ -77,22 +77,13 @@ class LiveMultiVariantCaller:
         if not pileup.is_del and not pileup.is_refskip:
             base = pileup.alignment.query_sequence[pileup.query_position]
 
-            if base not in self.memory[position]['alleles'].keys():
-                self.memory[position]['alleles'][base] = {
-                    'evidenceDepth': 0,
-                    'baseErrorProbabilities': [],
-                    'baseQualities': [],
-                    'mappingQualities': []
-                }
+            if base not in self.memory[position]['baseQualities'].keys():
+                # We could store more information here in the memory. But as the Base Qualty is the the only information that matters for further calculation we 
+                # save memory and only store them
 
-
-            self.memory[position]['alleles'][base]['evidenceDepth'] += 1
-
-            self.memory[position]['alleles'][base]['baseQualities'].append(pileup.alignment.query_qualities[pileup.query_position])
-            self.memory[position]['alleles'][base]['baseErrorProbabilities'].append(from_phred_scale(pileup.alignment.query_qualities[pileup.query_position]))
-            self.memory[position]['alleles'][base]['mappingQualities'].append(pileup.alignment.mapping_quality)
-
-
+                self.memory[position]['baseQualities'][base] = []
+            else:
+                self.memory[position]['baseQualities'][base].append(pileup.alignment.query_qualities[pileup.query_position])
 
     def reset_memory(self):
         self.memory: dict[int, MultiPosition] = {}
@@ -169,31 +160,31 @@ class LiveMultiVariantCaller:
 
         for position in progressBar:
             if self.memory[position]['totalDepth'] >= self.minTotalDepth:
-                baseErrorProbabilities = {
-                    allele: self.memory[position]['alleles'][allele]['baseErrorProbabilities']
-                    for allele in self.memory[position]['alleles'].keys()
+                errorProbabilities = {
+                    allele: [
+                        from_phred_scale(quality)
+                        for quality in self.memory[position]['baseQualities'][allele]
+                    ]
+                    for allele in self.memory[position]['baseQualities'].keys()
                 }
 
                 genotypeLikelihoods = {
-                    allele: calculate_genotype_likelihood(allele, baseErrorProbabilities)
-                    for allele in baseErrorProbabilities.keys()
+                    allele: calculate_genotype_likelihood(allele, errorProbabilities)
+                    for allele in errorProbabilities.keys()
                 }
 
                 sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values(), 0.0)
                 sumGenotypeLikelihoods = sumGenotypeLikelihoods if sumGenotypeLikelihoods != 0 else 1.0
 
-                scores = {
-                    allele: to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods)) 
-                    for allele in genotypeLikelihoods.keys()
-                }
-
                 variants = []
 
-                for allele in self.memory[position]['alleles'].keys():
+                for allele in errorProbabilities.keys():
+                    evidenceDepth = len(errorProbabilities[allele])
+
                     filterConstrains = [
                         self.memory[position]['reference'] != allele,
-                        self.memory[position]['alleles'][allele]['evidenceDepth'] >= self.minEvidenceDepth,
-                        self.memory[position]['alleles'][allele]['evidenceDepth'] / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                        evidenceDepth >= self.minEvidenceDepth,
+                        evidenceDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
                     ]
 
                     if all(filterConstrains):
@@ -206,7 +197,8 @@ class LiveMultiVariantCaller:
                             gl = 0
                             pl = 0
                         
-                        score = scores[allele]
+                        score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
+                        qual = np.mean(errorProbabilities[allele])
 
                         variants.append({
                             'start': position,
@@ -215,10 +207,10 @@ class LiveMultiVariantCaller:
                                 self.memory[position]['reference'], 
                                 allele
                             ),
-                            'qual': np.mean(self.memory[position]['alleles'][allele]['baseQualities']),
+                            'qual': qual,
                             'info': {
                                 'TD': self.memory[position]['totalDepth'],
-                                'ED': self.memory[position]['alleles'][allele]['evidenceDepth'],
+                                'ED': evidenceDepth,
                                 'GL': gl,
                                 'PL': pl,
                                 'SCORE': score
