@@ -1,13 +1,20 @@
 from variant_caller.live_variant_caller import LiveVariantCaller
-from config import minBaseQuality, minMappingQuality, minCandidatesDepth, minTotalDepth
+from config import minBaseQuality, minMappingQuality, minTotalDepth
 
 def main():
+    minEvidenceDepth = 5
+    minEvidenceRatio = 0.10
+    maxVariants = 1
+
+
     liveVariantCaller = LiveVariantCaller(
         'input/reference.fasta',
         minBaseQuality,
         minMappingQuality,
         minTotalDepth,
-        minCandidatesDepth
+        minEvidenceDepth,
+        minEvidenceRatio,
+        maxVariants
     )
 
 
@@ -22,7 +29,7 @@ def main():
     liveVariantCaller.process_bam('input/input-9/input.bam')
     liveVariantCaller.process_bam('input/input-10/input.bam')
     
-    liveVariantCaller.write_vcf('output/live_variant_caller.vcf')
+    liveVariantCaller.write_vcf('output/live_multi_variant_caller.vcf')
     liveVariantCaller.create_checkpoint('output/checkpoint.pkl')
   
 

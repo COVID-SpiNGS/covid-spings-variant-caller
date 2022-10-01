@@ -1,24 +1,29 @@
+
 import functools
 import operator
 import pickle
+import math
+
 import pysam
 import numpy as np
-from tqdm import tqdm
 
+from tqdm import tqdm
 from pysam import AlignedSegment
-from structs import Alternative, Position
+from structs import Site
 from time import strftime, localtime
+
  
 
-from utils import genotype_likelihood, from_phred_scale, to_phred_scale, to_phred_scale
+from utils import genotype_likelihood, genotype_likelihood, from_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
-
-    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minCandidatesDepth: int):
+    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minEvidenceDepth: int, minEvidenceRatio: float, maxVariants: int):
         self.minBaseQuality = minBaseQuality
         self.minMappingQuality = minMappingQuality
         self.minTotalDepth = minTotalDepth
-        self.minCandidatesDepth = minCandidatesDepth
+        self.minEvidenceDepth = minEvidenceDepth
+        self.minEvidenceRatio = minEvidenceRatio
+        self.maxVariants = maxVariants
         
         self.fastaFile = pysam.FastaFile(referenceFasta)
 
@@ -26,6 +31,25 @@ class LiveVariantCaller:
 
     def __del__(self):
         self.fastaFile.close()
+
+    def reset_memory(self):
+        self.memory: dict[int, Site] = {}
+
+    def create_checkpoint(self, filename):
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        print(f'{timestamp} Creating checkpoint {filename}')
+
+        file = open(filename, 'wb')
+        pickle.dump(self.memory, file)
+        file.close()
+
+    def load_checkpoint(self, filename):
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        print(f'{timestamp} Loading checkpoint {filename}')
+
+        file = open(filename, 'rb')
+        self.memory,  = pickle.load(file)
+        file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
@@ -58,30 +82,7 @@ class LiveVariantCaller:
             self.memory[pileupColumn.reference_pos] = {
                 'reference': reference[pileupColumn.reference_pos],
                 'totalDepth': totalDepth,
-                'baseFrequencies': {
-                    'A': 0,
-                    'T': 0,
-                    'C': 0,
-                    'G': 0,
-                },
-                'baseQualities': {
-                    'A': [],
-                    'T': [],
-                    'C': [],
-                    'G': []
-                },
-                'mappingQualities': {
-                    'A': [],
-                    'T': [],
-                    'C': [],
-                    'G': []
-                },
-                'baseErrorProbabilities': {
-                    'A': [],
-                    'T': [],
-                    'C': [],
-                    'G': []
-                },
+                'baseQualities': {}
             }
         else:
             self.memory[pileupColumn.reference_pos]['totalDepth'] += totalDepth
@@ -89,71 +90,25 @@ class LiveVariantCaller:
         for pileup in pileupColumn.pileups:
             self.process_pileup_at_position(pileupColumn.reference_pos, pileup)
 
-        self.memory[pileupColumn.reference_pos]['candidatesDepth'] = self.memory[pileupColumn.reference_pos]['baseFrequencies']['A'] \
-            + self.memory[pileupColumn.reference_pos]['baseFrequencies']['T'] \
-            + self.memory[pileupColumn.reference_pos]['baseFrequencies']['C'] \
-            + self.memory[pileupColumn.reference_pos]['baseFrequencies']['G']
-            
-
     def process_pileup_at_position(self, position: int, pileup):
         if not pileup.is_del and not pileup.is_refskip:
-            alt = pileup.alignment.query_sequence[pileup.query_position]
-            self.memory[position]['baseFrequencies'][alt] += 1
+            base = pileup.alignment.query_sequence[pileup.query_position]
 
-            self.memory[position]['baseQualities'][alt].append(pileup.alignment.query_qualities[pileup.query_position])
-            self.memory[position]['mappingQualities'][alt].append(pileup.alignment.mapping_quality)
-            self.memory[position]['baseErrorProbabilities'][alt].append(from_phred_scale(pileup.alignment.query_qualities[pileup.query_position]))
+            if base not in self.memory[position]['baseQualities'].keys():
+                # We could store more information here in the memory. But as the Base Qualty is the the only information that matters for further calculation we 
+                # save memory and only store them
 
-
-    def reset_memory(self):
-        self.memory: dict[int, Position] = {}
-
-    def create_checkpoint(self, filename):
-        file = open(filename, 'wb')
-        pickle.dump(self.memory, file)
-        file.close()
-
-    def load_checkpoint(self, filename):
-        file = open(filename, 'rb')
-        self.memory,  = pickle.load(file)
-        file.close()
-
-    def get_alternative(self, position: Position) -> Alternative:
-        if(position['candidatesDepth'] >= self.minCandidatesDepth):
-            genotypeLikelihoods = {
-                base: (
-                    genotype_likelihood(base, position, 'baseErrorProbabilities') 
-                    if len(position['baseErrorProbabilities'][base]) > 0
-                    else 0.0
-                )
-                for base in position['baseErrorProbabilities'].keys()
-            }
-
-            sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values())
-
-            pValues = {
-                base: (genotypeLikelihoods[base] / sumGenotypeLikelihoods) if sumGenotypeLikelihoods != 0 else 1.0
-                for base in genotypeLikelihoods.keys()
-            }
-
-            alt = max(position['baseFrequencies'], key=position['baseFrequencies'].get)
-            # qual = pValues[alt]
-            qual = to_phred_scale(1.0 - pValues[alt])  
-
-            return {
-                'isRelevant': alt != position['reference'],
-                'alt': alt,
-                'qual': qual
-            }
-        else:
-            return {
-                'isRelevant': False,
-                'alt': None,
-                'qual': 0
-            }
+                self.memory[position]['baseQualities'][base] = []
+            else:
+                self.memory[position]['baseQualities'][base].append(pileup.alignment.query_qualities[pileup.query_position])
 
     def write_vcf(self, outputVfc: str):
-        print(strftime('[%Y-%m-%d %H:%M:%S]', localtime()), 'Writing to', outputVfc, '...')    
+        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
+        progressBar = tqdm(
+            self.memory, 
+            desc=f'{timestamp} Writing VCF to {outputVfc}',
+            total=len(self.memory.keys())
+        )
 
         vcfHeader = pysam.VariantHeader()
 
@@ -165,32 +120,33 @@ class LiveVariantCaller:
         ])
 
         vcfHeader.add_meta('INFO', items=[
-            ('ID', 'CD'),
+            ('ID', 'ED'),
             ('Number', 1),
             ('Type', 'Integer'),
-            ('Description', 'Candidates Depth')
+            ('Description', 'Evidence Depth')
         ])
 
         vcfHeader.add_meta('INFO', items=[
-            ('ID', 'MBQ'),
-            ('Number', 4),
+            ('ID', 'GL'),
+            ('Number', 1),
             ('Type', 'Float'),
-            ('Description', 'Mean Base Qualities (A, T, C, G)')
+            ('Description', 'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
         ])
 
         vcfHeader.add_meta('INFO', items=[
-            ('ID', 'MMQ'),
-            ('Number', 4),
-            ('Type', 'Float'),
-            ('Description', 'Mean Mapping Qualities (A, T, C, G)')
-        ])
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'BF'),
-            ('Number', 4),
+            ('ID', 'PL'),
+            ('Number', 1),
             ('Type', 'Integer'),
-            ('Description', 'Base Frequencies (A, T, C, G)')
+            ('Description', 'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
         ])
+
+        vcfHeader.add_meta('INFO', items=[
+            ('ID', 'SCORE'),
+            ('Number', 1),
+            ('Type', 'Float'),
+            ('Description', 'Custom scoring function')
+        ])
+
 
         for reference in self.fastaFile.references:
             vcfHeader.contigs.add(
@@ -200,37 +156,75 @@ class LiveVariantCaller:
 
         vcfFile = pysam.VariantFile(outputVfc, mode='w', header=vcfHeader)
 
-        for index in self.memory:
-            if self.memory[index]['totalDepth'] >= self.minTotalDepth and self.memory[index]['candidatesDepth'] >= self.minCandidatesDepth:
-                alternative = self.get_alternative(self.memory[index])
+        for position in progressBar:
+            if self.memory[position]['totalDepth'] >= self.minTotalDepth:
+                errorProbabilities = {
+                    allele: [
+                        from_phred_scale(quality)
+                        for quality in self.memory[position]['baseQualities'][allele]
+                    ]
+                    for allele in self.memory[position]['baseQualities'].keys()
+                }
 
-                if alternative['isRelevant']:
-                    vcfRecord = vcfFile.new_record(
-                        start=index, 
-                        stop=index + 1,
-                        alleles=(
-                            self.memory[index]['reference'], 
-                            alternative['alt']
-                        ),
-                        qual=alternative['qual'],
-                        info={
-                            'TD': self.memory[index]['totalDepth'],
-                            'CD': self.memory[index]['candidatesDepth'],
-                            'MBQ': [
-                                np.mean(self.memory[index]['baseQualities']['A']) if len(self.memory[index]['baseQualities']['A']) > 0 else 0,
-                                np.mean(self.memory[index]['baseQualities']['T']) if len(self.memory[index]['baseQualities']['T']) > 0 else 0,
-                                np.mean(self.memory[index]['baseQualities']['C']) if len(self.memory[index]['baseQualities']['C']) > 0 else 0,
-                                np.mean(self.memory[index]['baseQualities']['G']) if len(self.memory[index]['baseQualities']['G']) > 0 else 0
-                            ],
-                            'MMQ': [
-                                np.mean(self.memory[index]['mappingQualities']['A']) if len(self.memory[index]['mappingQualities']['A']) > 0 else 0,
-                                np.mean(self.memory[index]['mappingQualities']['T']) if len(self.memory[index]['mappingQualities']['T']) > 0 else 0,
-                                np.mean(self.memory[index]['mappingQualities']['C']) if len(self.memory[index]['mappingQualities']['C']) > 0 else 0,
-                                np.mean(self.memory[index]['mappingQualities']['G']) if len(self.memory[index]['mappingQualities']['G']) > 0 else 0
-                            ],
-                            'BF': list(self.memory[index]['baseFrequencies'].values())
-                        }
-                    )
+                genotypeLikelihoods = {
+                    allele: genotype_likelihood(allele, errorProbabilities)
+                    for allele in errorProbabilities.keys()
+                }
 
-                    vcfFile.write(vcfRecord)
+                sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values(), 0.0)
+                sumGenotypeLikelihoods = sumGenotypeLikelihoods if sumGenotypeLikelihoods != 0 else 1.0
+
+                variants = []
+
+                for allele in errorProbabilities.keys():
+                    evidenceDepth = len(errorProbabilities[allele])
+
+                    filterConstrains = [
+                        self.memory[position]['reference'] != allele,
+                        evidenceDepth >= self.minEvidenceDepth,
+                        evidenceDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                    ]
+
+                    if all(filterConstrains):
+                        genotypeLikelihood = genotypeLikelihoods[allele]
+
+                        if genotypeLikelihood != 0:
+                            gl = math.log10(genotypeLikelihood)
+                            pl = round(-10.0 * gl)
+                        else:
+                            gl = 0
+                            pl = 0
+                        
+                        score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
+                        qual = np.mean(errorProbabilities[allele])
+
+                        variants.append({
+                            'start': position,
+                            'stop': position + 1,
+                            'alleles': (
+                                self.memory[position]['reference'], 
+                                allele
+                            ),
+                            'qual': qual,
+                            'info': {
+                                'TD': self.memory[position]['totalDepth'],
+                                'ED': evidenceDepth,
+                                'GL': gl,
+                                'PL': pl,
+                                'SCORE': score
+                            }
+                        })
+
+                for index, variant in enumerate(sorted(variants, key=lambda variant: variant['info']['SCORE'])):
+                    if self.maxVariants == 0 or index < self.maxVariants:
+                        vcfFile.write(
+                            vcfFile.new_record(
+                                start=variant['start'], 
+                                stop=variant['stop'],
+                                alleles=variant['alleles'],
+                                qual=variant['qual'],
+                                info=variant['info'],
+                            )
+                        )
+
         vcfFile.close()
