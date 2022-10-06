@@ -9,12 +9,10 @@ import numpy as np
 
 from tqdm import tqdm
 from pysam import AlignedSegment
-from structs import Site
 from time import strftime, localtime
 
- 
-
-from utils import genotype_likelihood, genotype_likelihood, from_phred_scale, to_phred_scale
+from .structs import Site
+from .utils import genotype_likelihood, genotype_likelihood, from_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
     def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minEvidenceDepth: int, minEvidenceRatio: float, maxVariants: int):

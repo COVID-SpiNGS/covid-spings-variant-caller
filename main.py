@@ -1,5 +1,5 @@
 from variant_caller.live_variant_caller import LiveVariantCaller
-from config import minBaseQuality, minMappingQuality, minTotalDepth
+from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
 
 def main():
     minEvidenceDepth = 5
