@@ -9,3 +9,5 @@ A% = Prozentanteil von As im Verhaeltnis zur Anzahl der Reads. Oder Ergeniss der
 
 
 ...Rest so wie bei A un A%
+
+xyz
