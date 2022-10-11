@@ -33,10 +33,11 @@ def serve_forever():
 parser = argparse.ArgumentParser()
 
 def construct_cli():
-    parser.add_argument("start", help="echo the string you use here")
-    parser.add_argument("stop", help="echo the string you use here")
-    parser.add_argument("process", help="echo the string you use here")
-    parser.add_argument("write", help="echo the string you use here")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("start", nargs='?', help="echo the string you use here")
+    group.add_argument("stop", nargs='?', help="echo the string you use here")
+    group.add_argument("process", nargs='?', help="echo the string you use here")
+    group.add_argument("write", nargs='?', help="echo the string you use here")
 
 
 if __name__ == '__main__':
@@ -44,7 +45,13 @@ if __name__ == '__main__':
     construct_cli()
 
     args = parser.parse_args()
-    print(args.echo)
+
+    if args.start:
+        print("hahahah")
+    print(args.start)
+
+    #if args.start is True:
+   #     print("start")
 
     #with daemon.DaemonContext():
     #    print("LOL")
