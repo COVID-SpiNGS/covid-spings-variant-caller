@@ -8,7 +8,7 @@ def main():
 
 
     liveVariantCaller = LiveVariantCaller(
-        'input/reference.fasta',
+        'input/reference-covid.fasta',
         minBaseQuality,
         minMappingQuality,
         minTotalDepth,
@@ -16,8 +16,19 @@ def main():
         minEvidenceRatio,
         maxVariants
     )
+    
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
+    liveVariantCaller.process_bam('input/input.bam')
 
-
+    """
     liveVariantCaller.process_bam('input/input-1/input.bam')
     liveVariantCaller.process_bam('input/input-2/input.bam')
     liveVariantCaller.process_bam('input/input-3/input.bam')
@@ -28,10 +39,10 @@ def main():
     liveVariantCaller.process_bam('input/input-8/input.bam')
     liveVariantCaller.process_bam('input/input-9/input.bam')
     liveVariantCaller.process_bam('input/input-10/input.bam')
-    
+    """
     liveVariantCaller.write_vcf('output/live_multi_variant_caller.vcf')
     liveVariantCaller.create_checkpoint('output/checkpoint.pkl')
-  
+    
 
 if __name__=='__main__':
     main()

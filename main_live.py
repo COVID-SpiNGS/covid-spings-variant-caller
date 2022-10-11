@@ -1,81 +1,51 @@
-
 import sys
 import socket
 import time
+import threading
+import daemon
+import argparse
+
 
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
 PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
 
 
-def main():
-    action = sys.argv[1]
-    
-    if action == 'start':
-        # start socket
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.bind((HOST, PORT))
-            sock.listen()
-            print(f'Accepting connections under port {PORT}...')
+def handle_client(sock):
+    with sock.makefile() as f:
+        sock.close()
+        for line in f:
+            f.writeline(line)
 
 
-            try:
-                while True:
-                    connection, address = sock.accept()
-                    with connection:
-                        operation = connection.recv(1024)
-
-                        if b' ' in operation:
-                            (action, param) = operation.split(b' ')
-                        else: 
-                            action = operation
-                            param = b''
-                        
-                        if action == b'stop':
-                            print('Stopping server in 10 seconds...')
-                            time.sleep(10)
-                            break
-                        elif action == b'process':
-                            print('Processing BAM...', param)
-                        elif action == b'write':
-                            print('Write VCF...', param)
-                        elif action == b'save':
-                            print('Save Checkpoint...')
-                        elif action == b'load':
-                            print('Load Checkpoint...')
-                        
-
-            finally:
-                print('Stopping server now...')
-                sock.close()
+def serve_forever():
+    server = socket.socket()
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((HOST, PORT))
+    server.listen(1)
+    while True:
+        conn, address = server.accept()
+        thread = threading.Thread(target=handle_client, args=[conn])
+        thread.daemon = True
+        thread.start()
 
 
 
+parser = argparse.ArgumentParser()
 
-    elif action == 'stop':
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((HOST, PORT))
-            sock.sendall(b'stop')
-            sock.close()
+def construct_cli():
+    parser.add_argument("start", help="echo the string you use here")
+    parser.add_argument("stop", help="echo the string you use here")
+    parser.add_argument("process", help="echo the string you use here")
+    parser.add_argument("write", help="echo the string you use here")
 
 
-        print(action)
-    elif action == 'process':
-        # connect to socket and send add command
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((HOST, PORT))
-            sock.sendall(b'process lala.bam')
-            sock.close()
+if __name__ == '__main__':
 
-    elif action == 'write':
-        # connect to socket and send add command
-        # connect to socket and send add command
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((HOST, PORT))
-            sock.sendall(b'write test.vcf')
-            sock.close()
-    else:
-        print('Invalid Action')
-  
+    construct_cli()
 
-if __name__=='__main__':
-    main()
+    args = parser.parse_args()
+    print(args.echo)
+
+    #with daemon.DaemonContext():
+    #    print("LOL")
+    #serve_forever()
