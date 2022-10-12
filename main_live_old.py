@@ -1,6 +1,5 @@
-
-import sys
 import socket
+import sys
 import time
 
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
@@ -26,7 +25,7 @@ def main():
 
                         if b' ' in operation:
                             (action, param) = operation.split(b' ')
-                        else: 
+                        else:
                             action = operation
                             param = b''
                         

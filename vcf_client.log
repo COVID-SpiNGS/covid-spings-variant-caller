@@ -1,0 +1,43 @@
+2022-10-13 00:25:04,355 | root | INFO | Welcome...
+2022-10-13 00:25:04,355 | root | INFO | 
+2022-10-13 00:25:20,222 | root | INFO | Welcome...
+2022-10-13 00:25:20,222 | root | INFO | 
+2022-10-13 00:25:45,140 | root | INFO | Welcome...
+2022-10-13 00:25:45,140 | root | INFO | 
+2022-10-13 00:25:57,844 | root | INFO | Welcome...
+2022-10-13 00:25:57,845 | root | INFO | 
+2022-10-13 00:26:25,946 | root | INFO | Welcome... Setting up client
+2022-10-13 00:26:45,454 | root | INFO | Welcome... Setting up client
+2022-10-13 00:26:54,455 | root | INFO | Welcome... Setting up client
+2022-10-13 00:41:26,457 | root | INFO | Welcome... Setting up client
+2022-10-13 00:43:36,273 | root | INFO | Welcome... Setting up client
+2022-10-13 00:52:29,128 | root | INFO | Welcome... Setting up client
+2022-10-13 00:54:57,966 | root | INFO | Welcome... Setting up client
+2022-10-13 00:55:17,998 | root | INFO | Welcome... Setting up client
+2022-10-13 00:55:18,003 | root | INFO | Selected action is  with .
+2022-10-13 00:55:28,500 | root | INFO | Welcome... Setting up client
+2022-10-13 00:55:28,500 | root | INFO | Selected action is  with .
+2022-10-13 00:55:28,500 | root | INFO | Connecting to server under '127.0.0.1':654321...
+2022-10-13 00:55:35,259 | root | INFO | Welcome... Setting up client
+2022-10-13 00:56:23,584 | root | INFO | Welcome... Setting up client
+2022-10-13 00:56:23,584 | root | INFO | Selected action is  with .
+2022-10-13 00:56:23,584 | root | INFO | Connecting to server under '127.0.0.1':654321...
+2022-10-13 00:56:47,626 | root | INFO | Welcome... Setting up client
+2022-10-13 00:56:57,592 | root | INFO | Welcome... Setting up client
+2022-10-13 00:56:57,592 | root | INFO | Selected action is  with .
+2022-10-13 00:56:57,593 | root | INFO | Connecting to server under 127.0.0.1:654321...
+2022-10-13 00:57:22,015 | root | INFO | Welcome... Setting up client
+2022-10-13 00:57:22,015 | root | INFO | Selected action is  with .
+2022-10-13 00:57:22,015 | root | INFO | Connecting to server under 127.0.0.1:654321...
+2022-10-13 00:57:32,701 | root | INFO | Welcome... Setting up client
+2022-10-13 00:57:32,701 | root | INFO | Selected action is  with .
+2022-10-13 00:57:32,701 | root | INFO | Connecting to server under 127.0.0.1:654321...
+2022-10-13 00:57:44,133 | root | INFO | Welcome... Setting up client
+2022-10-13 00:57:44,134 | root | INFO | Selected action is  with .
+2022-10-13 00:57:44,134 | root | INFO | Connecting to server under 127.0.0.1:65432...
+2022-10-13 00:58:01,556 | root | INFO | Welcome... Setting up client
+2022-10-13 00:58:01,556 | root | INFO | Selected action is  with .
+2022-10-13 00:58:01,556 | root | INFO | Connecting to server under '127.0.0.1':65432...
+2022-10-13 00:58:19,696 | root | INFO | Welcome... Setting up client
+2022-10-13 00:58:19,696 | root | INFO | Selected action is  with .
+2022-10-13 00:58:19,696 | root | INFO | Connecting to server under 127.0.0.1:65432...
