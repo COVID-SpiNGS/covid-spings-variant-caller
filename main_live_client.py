@@ -22,8 +22,6 @@ def _construct_cli():
     parser.add_argument('--stop', help='run or stop', nargs='?')
 
 
-
-
 def _params_is_valid(action: str, params: str) -> bool:
     valid = False
 
@@ -80,9 +78,6 @@ def _run():
             _talk_to_server(action, params)
         else:
             logging.error(f'{params} is invalid... please make sure path exists.')
-
-
-# TODO: Shutdown client gracefully ?
 
 
 if __name__ == '__main__':

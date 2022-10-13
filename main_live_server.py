@@ -56,18 +56,16 @@ def _run():
             with connection:
                 data = connection.recv(1024)
                 logging.info(f"Received {data!r}")
-                data_str = data.decode('utf-8')
-                input = data_str.split(' ')
+                recv_data = data.decode('utf-8').split(' ')
 
-                if input[0] == 'stop':
+                if recv_data[0] == 'stop':
                     _shutdown_gracefully(sock)
-                elif input[0] == 'process':
-                    _process_bam(input[1])
-                elif input[0] == 'write':
-                    _write_vcf(input[1])
+                elif recv_data[0] == 'process':
+                    _process_bam(recv_data[1])
+                elif recv_data[0] == 'write':
+                    _write_vcf(recv_data[1])
                 else:
-                    logging.info("NO SUCH ACTION")
-                    # TODO: Throw Illegal Action Exception maybe ?
+                    logging.error(f'No such action: {recv_data[0]}')
 
 
 # with daemon.DaemonContext():
