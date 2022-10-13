@@ -3,6 +3,7 @@ import socket
 import configparser
 import logging
 import os
+from pathlib import Path
 
 logging.basicConfig(filename='vcf_client.log',
                     level=logging.DEBUG,
@@ -21,6 +22,8 @@ def _construct_cli():
     parser.add_argument('--stop', help='run or stop', nargs='?')
 
 
+
+
 def _params_is_valid(action: str, params: str) -> bool:
     valid = False
 
@@ -29,7 +32,8 @@ def _params_is_valid(action: str, params: str) -> bool:
             valid = True
 
     if action.casefold() == 'write':
-        if params.endswith('.vcf') and os.path.isfile(params):
+        path = Path(params).parent.absolute()
+        if params.endswith('.vcf') and os.path.exists(path):
             valid = True
 
     if action.casefold() == 'stop':

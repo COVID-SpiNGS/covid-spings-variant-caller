@@ -22,7 +22,7 @@ liveVariantCaller = LiveVariantCaller(
     minMappingQuality,
     minTotalDepth,
     int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth']),
-    int(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
+    float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
     int(config['VARIANT_CALLER_PARAMS']['maxVariants'])
 )
 
