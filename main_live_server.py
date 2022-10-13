@@ -4,26 +4,37 @@ import threading
 import daemon
 import logging
 import configparser
+from variant_caller.live_variant_caller import LiveVariantCaller
+from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
 
 logging.basicConfig(filename='vcf_server.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
 config = configparser.ConfigParser()
-config.read('sockets.conf')
+config.read('settings.config')
 HOST = config['BASIC_PARAMS']['HOST']
 PORT = int(config['BASIC_PARAMS']['PORT'])
 
+liveVariantCaller = LiveVariantCaller(
+    config['VARIANT_CALLER_PARAMS']['REF'],
+    minBaseQuality,
+    minMappingQuality,
+    minTotalDepth,
+    int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth']),
+    int(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
+    int(config['VARIANT_CALLER_PARAMS']['maxVariants'])
+)
+
 
 def _process_bam(path: str):
-    logging.info('Processing BAM...', path)
-    return True
+    logging.info(f'Processing BAM with path {path}')
+    liveVariantCaller.process_bam(path)
 
 
 def _write_vcf(path: str):
-    logging.info('Write VCF...', path)
-
-    return True
+    logging.info(f'Writing VCF to {path}')
+    liveVariantCaller.write_vcf(path)
 
 
 def _shutdown_gracefully(sock):
@@ -45,21 +56,15 @@ def _run():
             with connection:
                 data = connection.recv(1024)
                 logging.info(f"Received {data!r}")
-                (action, params) = (b'', b'')
+                data_str = data.decode('utf-8')
+                input = data_str.split(' ')
 
-                if b' ' in data:
-                    (action, params) = data.split(b' ')
-                else:
-                    action = data
-                    params = b''
-
-
-                if action == b'stop':
+                if input[0] == 'stop':
                     _shutdown_gracefully(sock)
-                elif action == b'process':
-                    _process_bam(params)
-                elif action == b'write':
-                    _write_vcf(params)
+                elif input[0] == 'process':
+                    _process_bam(input[1])
+                elif input[0] == 'write':
+                    _write_vcf(input[1])
                 else:
                     logging.info("NO SUCH ACTION")
                     # TODO: Throw Illegal Action Exception maybe ?

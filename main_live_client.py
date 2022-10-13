@@ -10,7 +10,7 @@ logging.basicConfig(filename='vcf_client.log',
 
 parser = argparse.ArgumentParser()
 config = configparser.ConfigParser()
-config.read('sockets.conf')
+config.read('settings.config')
 HOST = config['BASIC_PARAMS']['HOST']
 PORT = int(config['BASIC_PARAMS']['PORT'])
 
