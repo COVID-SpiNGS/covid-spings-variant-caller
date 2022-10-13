@@ -7,3 +7,19 @@
 2022-10-13 10:29:15,265 | root | INFO | Selected action is process with dsjkfnkjsdnfkjds.
 2022-10-13 10:29:15,265 | root | INFO | Connecting to server under 127.0.0.1:65432...
 2022-10-13 10:29:15,265 | root | ERROR | Not able to connect to 127.0.0.1:65432. Is server running?
+2022-10-13 10:37:58,411 | root | INFO | Welcome... Setting up client
+2022-10-13 10:37:58,411 | root | INFO | Selected action is process with dsjkfnkjsdnfkjds.
+2022-10-13 10:37:58,411 | root | INFO | Connecting to server under 127.0.0.1:65432...
+2022-10-13 10:37:58,411 | root | ERROR | Not able to connect to 127.0.0.1:65432. Is server running?
+2022-10-13 10:47:49,633 | root | INFO | Welcome... Setting up client
+2022-10-13 10:47:49,634 | root | INFO | Selected action is process with dsjkfnkjsdnfkjds.
+2022-10-13 10:47:49,634 | root | ERROR | dsjkfnkjsdnfkjds is invalid... please make sure path exists.
+2022-10-13 10:48:03,242 | root | INFO | Welcome... Setting up client
+2022-10-13 10:48:03,243 | root | INFO | Selected action is process with dsjkfnkjsdnfkjds.bam.
+2022-10-13 10:48:03,243 | root | ERROR | dsjkfnkjsdnfkjds.bam is invalid... please make sure path exists.
+2022-10-13 10:48:32,433 | root | INFO | Welcome... Setting up client
+2022-10-13 10:48:32,433 | root | INFO | Selected action is process with input/input.bam.
+2022-10-13 10:50:55,149 | root | INFO | Welcome... Setting up client
+2022-10-13 10:50:55,149 | root | INFO | Selected action is process with input/input.bam.
+2022-10-13 10:50:55,149 | root | INFO | Connecting to server under 127.0.0.1:65432...
+2022-10-13 10:50:55,149 | root | ERROR | Not able to connect to 127.0.0.1:65432. Is server running?

@@ -1,4 +1,3 @@
-import os
 import socket
 import time
 import threading
@@ -23,21 +22,8 @@ def _process_bam(path: str):
 
 def _write_vcf(path: str):
     logging.info('Write VCF...', path)
+
     return True
-
-
-def _path_is_valid(action: str, path: str) -> bool:
-    valid = False
-
-    if action.casefold() == 'process':
-        if path.endswith(b'.bam') and os.path.isfile(path):
-            valid = True
-
-    if action.casefold() == 'write':
-        if path.endswith(b'.vcf') and os.path.isfile(path):
-            valid = True
-
-    return valid
 
 
 def _shutdown_gracefully(sock):
@@ -67,14 +53,13 @@ def _run():
                     action = data
                     params = b''
 
+
                 if action == b'stop':
                     _shutdown_gracefully(sock)
                 elif action == b'process':
-                    if _path_is_valid(action, params):
-                        _process_bam(params)
+                    _process_bam(params)
                 elif action == b'write':
-                    if _path_is_valid(action, params):
-                        _write_vcf(params)
+                    _write_vcf(params)
                 else:
                     logging.info("NO SUCH ACTION")
                     # TODO: Throw Illegal Action Exception maybe ?
