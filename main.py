@@ -3,7 +3,7 @@ from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDep
 
 def main():
     minEvidenceDepth = 5
-    minEvidenceRatio = 0.10
+    minEvidenceRatio = 0.0
     maxVariants = 1
 
 
@@ -17,17 +17,19 @@ def main():
         maxVariants
     )
 
+    liveVariantCaller.process_bam('input/input.bam')
 
-    liveVariantCaller.process_bam('input/input-1/input.bam')
-    liveVariantCaller.process_bam('input/input-2/input.bam')
-    liveVariantCaller.process_bam('input/input-3/input.bam')
-    liveVariantCaller.process_bam('input/input-4/input.bam')
-    liveVariantCaller.process_bam('input/input-5/input.bam')
-    liveVariantCaller.process_bam('input/input-6/input.bam')
-    liveVariantCaller.process_bam('input/input-7/input.bam')
-    liveVariantCaller.process_bam('input/input-8/input.bam')
-    liveVariantCaller.process_bam('input/input-9/input.bam')
-    liveVariantCaller.process_bam('input/input-10/input.bam')
+
+    # liveVariantCaller.process_bam('input/input-1/input.bam')
+    # liveVariantCaller.process_bam('input/input-2/input.bam')
+    # liveVariantCaller.process_bam('input/input-3/input.bam')
+    # liveVariantCaller.process_bam('input/input-4/input.bam')
+    # liveVariantCaller.process_bam('input/input-5/input.bam')
+    # liveVariantCaller.process_bam('input/input-6/input.bam')
+    # liveVariantCaller.process_bam('input/input-7/input.bam')
+    # liveVariantCaller.process_bam('input/input-8/input.bam')
+    # liveVariantCaller.process_bam('input/input-9/input.bam')
+    # liveVariantCaller.process_bam('input/input-10/input.bam')
     
     liveVariantCaller.write_vcf('output/live_multi_variant_caller.vcf')
     liveVariantCaller.create_checkpoint('output/checkpoint.pkl')
