@@ -1,4 +1,17 @@
+import logging
 from queue import Queue
+from variant_caller.live_variant_caller import LiveVariantCaller
+from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
+liveVariantCaller = LiveVariantCaller(
+    config['VARIANT_CALLER_PARAMS']['REF'],
+    minBaseQuality,
+    minMappingQuality,
+    minTotalDepth,
+    int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth']),
+    float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
+    int(config['VARIANT_CALLER_PARAMS']['maxVariants'])
+)
+
 
 
 class VCQueue:
@@ -12,26 +25,23 @@ class VCQueue:
     def put(self, action: str):
         self.q.put(action)
 
-    def dequeue(self):
-        rint("Queue is Full or Not:", q.full())
-        print("Size of Queue:", q.qsize())
-        print("Removing Elements:")
-        print(q.get())
-        print(q.get())
-        print(q.get())
-        print("Empty or Not??", q.empty())
-        print(q.get())
-        print("Empty or Not??", q.empty())
-        print("Size of Queue:", q.qsize())
+    def process(self):
+        if not self.q.empty():
+            (action, path) = self.q.get()
 
-    def _write_vcf(path: str):
+            if action == 'process':
+                self._process_bam(path)
+
+            elif action == 'write':
+                self._write_vcf(path)
+
+    def _write_vcf(self, path: str):
         logging.info(f'Writing VCF to {path}')
         liveVariantCaller.write_vcf(path)
 
-    def process(self):
-        if not self.q.empty():
-            action = self.q.get()
-            if action == 'process':
+    def _process_bam(self, path: str):
+        logging.info(f'Processing BAM with path {path}')
+        liveVariantCaller.process_bam(path)
 
-            elif action == 'write':
+
 

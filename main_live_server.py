@@ -3,11 +3,10 @@ import socket
 import time
 import threading
 import daemon
-import VCQueue from VCQueue
+from VCQueue import VCQueue
 import logging
 import configparser
-from variant_caller.live_variant_caller import LiveVariantCaller
-from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
+
 
 logging.basicConfig(filename='vcf_server.log',
                     level=logging.DEBUG,
@@ -18,23 +17,6 @@ config.read('settings.config')
 HOST = config['BASIC_PARAMS']['HOST']
 PORT = int(config['BASIC_PARAMS']['PORT'])
 queue_size = config['BASIC_PARAMS']['QUEUE_SIZE']
-
-liveVariantCaller = LiveVariantCaller(
-    config['VARIANT_CALLER_PARAMS']['REF'],
-    minBaseQuality,
-    minMappingQuality,
-    minTotalDepth,
-    int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth']),
-    float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
-    int(config['VARIANT_CALLER_PARAMS']['maxVariants'])
-)
-
-
-def _process_bam(path: str):
-    logging.info(f'Processing BAM with path {path}')
-    liveVariantCaller.process_bam(path)
-
-
 
 
 def _shutdown_gracefully(sock):
