@@ -1,7 +1,9 @@
+import multiprocessing
 import socket
 import time
 import threading
 import daemon
+import VCQueue from VCQueue
 import logging
 import configparser
 from variant_caller.live_variant_caller import LiveVariantCaller
@@ -15,6 +17,7 @@ config = configparser.ConfigParser()
 config.read('settings.config')
 HOST = config['BASIC_PARAMS']['HOST']
 PORT = int(config['BASIC_PARAMS']['PORT'])
+queue_size = config['BASIC_PARAMS']['QUEUE_SIZE']
 
 liveVariantCaller = LiveVariantCaller(
     config['VARIANT_CALLER_PARAMS']['REF'],
@@ -32,9 +35,6 @@ def _process_bam(path: str):
     liveVariantCaller.process_bam(path)
 
 
-def _write_vcf(path: str):
-    logging.info(f'Writing VCF to {path}')
-    liveVariantCaller.write_vcf(path)
 
 
 def _shutdown_gracefully(sock):
@@ -46,10 +46,18 @@ def _shutdown_gracefully(sock):
 
 
 def _run():
+
+    #if queue_size < 0:
+    try:
+        task_queue = VCQueue(queue_size)
+    # TODO: Reconsider exception type and size
+    except Exception:
+        logging.error('Incorrect queue size specified.')
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((HOST, PORT))
         sock.listen()
-        logging.info(f'Running now under {HOST}:{PORT}...')
+        logging.info(f'Ru v vcnning now under {HOST}:{PORT}...')
 
         while True:
             connection, address = sock.accept()
@@ -60,13 +68,17 @@ def _run():
 
                 if recv_data[0] == 'stop':
                     _shutdown_gracefully(sock)
-                elif recv_data[0] == 'process':
-                    _process_bam(recv_data[1])
-                elif recv_data[0] == 'write':
-                    _write_vcf(recv_data[1])
+                elif recv_data[0] == 'process' or recv_data[0] == 'write':
+                    #_process_bam(recv_data[1])
+                    task_queue.put((recv_data[0], recv_data[1]))
+                    #print(task_queue.)
+                    #_write_vcf(recv_data[1])
+                    #print(task_queue)
                 else:
                     logging.error(f'No such action: {recv_data[0]}')
 
+                while task_queue.not_empty:
+                    task_queue.get()
 
 # with daemon.DaemonContext():
 #    logging.info("LOL")
