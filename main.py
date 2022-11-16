@@ -27,47 +27,37 @@ def main():
     # liveVariantCaller.process_bam('input/input.bam')
 
 
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-1/input.bam')
-    print('1', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_001.bam')
+    print('1', time.time() - start)
   
 
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-2/input.bam')
-    print('2', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_002.bam')
+    print('2', time.time() - start)
 
 
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-3/input.bam')
-    print('3', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_003.bam')
+    print('3', time.time() - start)
 
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-4/input.bam')
-    print('4', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_004.bam')
+    print('4', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-5/input.bam')
-    print('5', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_005.bam')
+    print('5', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-6/input.bam')
-    print('6', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_006.bam')
+    print('6', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-7/input.bam')
-    print('7', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_007.bam')
+    print('7', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-8/input.bam')
-    print('8', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_008.bam')
+    print('8', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-9/input.bam')
-    print('9', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_009.bam')
+    print('9', time.time() - start)
     
-    start_sub = time.time()
-    liveVariantCaller.process_bam('input/input-10/input.bam')
-    print('10', time.time() - start_sub)
+    liveVariantCaller.process_bam('input/real/input_010.bam')
+    print('10', time.time() - start)
 
 
     liveVariantCaller.write_vcf('output/live_multi_variant_caller.vcf')
