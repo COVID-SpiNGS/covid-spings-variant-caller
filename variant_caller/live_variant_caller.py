@@ -16,11 +16,11 @@ from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
-    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minEvidenceDepth: int, minEvidenceRatio: float, maxVariants: int):
+    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minAlleleDepth: int, minEvidenceRatio: float, maxVariants: int):
         self.minBaseQuality = minBaseQuality
         self.minMappingQuality = minMappingQuality
         self.minTotalDepth = minTotalDepth
-        self.minAlleleDepth = minEvidenceDepth
+        self.minAlleleDepth = minAlleleDepth
         self.minEvidenceRatio = minEvidenceRatio
         self.maxVariants = maxVariants
         

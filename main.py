@@ -1,5 +1,5 @@
 from variant_caller.live_variant_caller import LiveVariantCaller
-from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
+
 import time
 
 def main():
@@ -8,6 +8,10 @@ def main():
     minEvidenceDepth = 5
     minEvidenceRatio = 0.0
     maxVariants = 1
+    minTotalDepth = 10
+    minMappingQuality = 20
+    minBaseQuality = 30
+
 
 
     liveVariantCaller = LiveVariantCaller(
