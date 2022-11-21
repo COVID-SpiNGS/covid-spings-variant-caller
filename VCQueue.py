@@ -42,7 +42,3 @@ class VCQueue:
     def _process_bam(self, path: str):
         logging.info(f'Processing BAM with path {path}')
         liveVariantCaller.process_bam(path)
-
-
-
-new remote test
