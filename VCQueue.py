@@ -2,6 +2,11 @@ import logging
 from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
 from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
+import configparser
+
+config = configparser.ConfigParser()
+config.read('settings.config')
+
 liveVariantCaller = LiveVariantCaller(
     config['VARIANT_CALLER_PARAMS']['REF'],
     minBaseQuality,

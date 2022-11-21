@@ -16,8 +16,8 @@ config = configparser.ConfigParser()
 config.read('settings.config')
 HOST = config['BASIC_PARAMS']['HOST']
 PORT = int(config['BASIC_PARAMS']['PORT'])
-queue_size = config['BASIC_PARAMS']['QUEUE_SIZE']
-
+queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
+task_queue = VCQueue(queue_size)
 
 def _shutdown_gracefully(sock):
     logging.info('Stopping server in 10 seconds...')
@@ -39,7 +39,7 @@ def _run():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((HOST, PORT))
         sock.listen()
-        logging.info(f'Ru v vcnning now under {HOST}:{PORT}...')
+        logging.info(f'Running now under {HOST}:{PORT}...')
 
         while True:
             connection, address = sock.accept()
