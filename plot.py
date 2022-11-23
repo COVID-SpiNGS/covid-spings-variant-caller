@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 
+# Runtime per File
 x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 y_python = [
     5.218637466430664,
@@ -29,8 +30,52 @@ y_kotlin = [
 
 plt.ylabel('Runtime in seconds')
 plt.xlabel('Number of files')
-plt.plot(x, y_python, label="Python")
-plt.plot(x, y_kotlin, label="Kotlin")
+plt.plot(x, y_python, label='Python', color='#76B900')
+plt.plot(x, y_kotlin, label='Kotlin', color='#0082D1')
+plt.legend()
+plt.show()
+
+# Runtime per MB
+
+
+x = [
+    5950153 / 1024 / 1024,
+    11871594 / 1024 / 1024,
+    17796370 / 1024 / 1024,
+    23712322 / 1024 / 1024,
+    29621170 / 1024 / 1024,
+    35534484 / 1024 / 1024,
+    47366139 / 1024 / 1024,
+    53274512 / 1024 / 1024,
+    59194871 / 1024 / 1024
+]
+y_python = [
+    5.295108795166016,
+    7.579920530319214,
+    10.147274255752563,
+    12.721980571746826,
+    16.16369652748108,
+    19.27688694000244,
+    26.451818227767944,
+    30.67709183692932,
+    34.758419036865234
+]
+y_kotlin = [
+    1.053,
+    1.141,
+    1.379,
+    1.589,
+    1.723,
+    1.875,
+    2.249,
+    2.540,
+    2.601
+]
+
+plt.ylabel('Runtime in seconds')
+plt.xlabel('Filesize in MB')
+plt.plot(x, y_python, label='Python', color='#76B900')
+plt.plot(x, y_kotlin, label='Kotlin', color='#0082D1')
 plt.legend()
 plt.show()
 
