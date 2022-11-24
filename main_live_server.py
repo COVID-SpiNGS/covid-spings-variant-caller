@@ -3,12 +3,13 @@ import socket
 import time
 import threading
 import daemon
-from VCQueue import VCQueue
+from vc_exception import VCException
+from vc_queue import VCQueue
 import logging
 import configparser
 
 
-logging.basicConfig(filename='vcf_server.log',
+logging.basicConfig(filename='vc_server.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
@@ -33,7 +34,7 @@ def _run():
     try:
         task_queue = VCQueue(queue_size)
     # TODO: Reconsider exception type and size
-    except Exception:
+    except :
         logging.error('Incorrect queue size specified.')
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
