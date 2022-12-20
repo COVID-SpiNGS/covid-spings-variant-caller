@@ -20,8 +20,6 @@ liveVariantCaller = LiveVariantCaller(
 
 
 class VCQueue:
-    q = Queue(maxsize=1)
-
     def __init__(self, size: int):
         if 10 >= size >= 1:
             self.size = size
@@ -31,6 +29,9 @@ class VCQueue:
             raise VCException(size)
 
     def put(self, action: str):
+        self.q.put(action)
+
+    def put(self, action: (str, str)):
         self.q.put(action)
 
     def process(self):
@@ -50,3 +51,9 @@ class VCQueue:
     def _process_bam(self, path: str):
         logging.info(f'Processing BAM with path {path}')
         liveVariantCaller.process_bam(path)
+
+    def is_empty(self):
+        if self.q.empty():
+            return True
+        return False
+

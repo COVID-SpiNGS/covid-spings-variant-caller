@@ -59,8 +59,8 @@ def _run():
                 else:
                     logging.error(f'No such action: {recv_data[0]}')
 
-                while task_queue.not_empty:
-                    task_queue.get()
+                while not task_queue.is_empty():
+                    task_queue.process()
 
 
 # with daemon.DaemonContext():
