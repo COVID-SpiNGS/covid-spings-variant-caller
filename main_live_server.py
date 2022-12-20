@@ -29,12 +29,7 @@ def _shutdown_gracefully(sock):
 
 
 def _run():
-
-    try:
-        task_queue = VCQueue(queue_size)
-    # TODO: Reconsider exception type and size
-    except VCException:
-        logging.error('Incorrect queue size specified.')
+    task_queue = VCQueue(queue_size)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind((HOST, PORT))
@@ -51,11 +46,9 @@ def _run():
                 if recv_data[0] == 'stop':
                     _shutdown_gracefully(sock)
                 elif recv_data[0] == 'process' or recv_data[0] == 'write':
-                    # _process_bam(recv_data[1])
+
                     task_queue.put((recv_data[0], recv_data[1]))
-                    # print(task_queue.)
-                    # _write_vcf(recv_data[1])
-                    # print(task_queue)
+
                 else:
                     logging.error(f'No such action: {recv_data[0]}')
 

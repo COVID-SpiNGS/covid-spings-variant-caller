@@ -19,6 +19,12 @@ liveVariantCaller = LiveVariantCaller(
 )
 
 
+# try:
+# task_queue = VCQueue(queue_size)
+# TODO: Reconsider exception type and size
+# except VCException:
+#   logging.error('Incorrect queue size specified.')
+
 class VCQueue:
     def __init__(self, size: int):
         if 10 >= size >= 1:
