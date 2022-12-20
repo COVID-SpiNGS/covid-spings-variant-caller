@@ -3,6 +3,7 @@ from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
 from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
 import configparser
+from vc_exception import VCException
 
 config = configparser.ConfigParser()
 config.read('settings.config')
@@ -18,14 +19,16 @@ liveVariantCaller = LiveVariantCaller(
 )
 
 
-
 class VCQueue:
-
-    q = Queue(maxsize=5)
+    q = Queue(maxsize=1)
 
     def __init__(self, size: int):
-        self.size = size
-        self.q = Queue(maxsize=self.size)
+        if 10 >= size >= 1:
+            self.size = size
+            self.q = Queue(maxsize=self.size)
+            logging.info(f'Init queue with size {size}')
+        else:
+            raise VCException(size)
 
     def put(self, action: str):
         self.q.put(action)

@@ -7,4 +7,4 @@ class VCException(Exception):
         self.queue_size = queue_size
 
     def __str__(self):
-        return f'The {self.queue_size} is not in a valid range {self.min_queue_size, self.max_queue_size}'
+        return f'The provided queue size ({self.queue_size}) is not in a valid range {self.min_queue_size, self.max_queue_size}'
