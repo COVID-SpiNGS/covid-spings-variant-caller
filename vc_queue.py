@@ -32,6 +32,7 @@ class VCQueue:
             self.q = Queue(maxsize=self.size)
             logging.info(f'Init queue with size {size}')
         else:
+            logging.error(f'Wrong queue size: {size} - Queue size must be in range of (1, 10)!')
             raise VCException(size)
 
     def put(self, action: str):
