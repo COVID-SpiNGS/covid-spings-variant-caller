@@ -22,6 +22,7 @@ task_queue = VCQueue(queue_size)
 
 def _shutdown_gracefully(sock):
     logging.info('Stopping server in 10 seconds...')
+    print('Stopping server in 10 seconds...')
     time.sleep(10)
     sock.shutdown(socket.SHUT_RDWR)
     sock.close()
@@ -35,6 +36,7 @@ def _run():
         sock.bind((HOST, PORT))
         sock.listen()
         logging.info(f'Running now under {HOST}:{PORT}...')
+        print(f'Running now under {HOST}:{PORT}...')
 
         while True:
             connection, address = sock.accept()

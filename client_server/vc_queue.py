@@ -3,7 +3,7 @@ from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
 from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
 import configparser
-from vc_exception import VCException
+from client_server.vc_exception import VCException
 
 config = configparser.ConfigParser()
 config.read('settings.config')
