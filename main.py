@@ -24,17 +24,6 @@ def main():
         minEvidenceRatio,
         maxVariants
     )
-    
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
-    liveVariantCaller.process_bam('input/input.bam')
 
     start = time.time()
     file = 'input/input-10/input.bam'
