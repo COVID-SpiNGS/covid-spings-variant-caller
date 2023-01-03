@@ -3,12 +3,12 @@ import socket
 import time
 import threading
 import daemon
-from vc_exception import VCException
-from vc_queue import VCQueue
+from client_server.vc_exception import VCException
+from client_server.vc_queue import VCQueue
 import logging
 import configparser
 
-logging.basicConfig(filename='vc_server.log',
+logging.basicConfig(filename='log/vc_server.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 

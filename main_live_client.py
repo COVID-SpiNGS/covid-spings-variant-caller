@@ -5,7 +5,7 @@ import logging
 import os
 from pathlib import Path
 
-logging.basicConfig(filename='vc_client.log',
+logging.basicConfig(filename='log/vc_client.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
