@@ -3,6 +3,7 @@ import functools
 import operator
 import pickle
 import math
+from typing import List
 
 import pysam
 import numpy as np
@@ -11,15 +12,15 @@ from tqdm import tqdm
 from pysam import AlignedSegment
 from time import strftime, localtime
 
-from .structs import Site
-from .utils import genotype_likelihood, genotype_likelihood, from_phred_scale, to_phred_scale
+from .structs import Site, Variant
+from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
 class LiveVariantCaller:
-    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minEvidenceDepth: int, minEvidenceRatio: float, maxVariants: int):
+    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minAlleleDepth: int, minEvidenceRatio: float, maxVariants: int):
         self.minBaseQuality = minBaseQuality
         self.minMappingQuality = minMappingQuality
         self.minTotalDepth = minTotalDepth
-        self.minEvidenceDepth = minEvidenceDepth
+        self.minAlleleDepth = minAlleleDepth
         self.minEvidenceRatio = minEvidenceRatio
         self.maxVariants = maxVariants
         
@@ -80,7 +81,8 @@ class LiveVariantCaller:
             self.memory[pileupColumn.reference_pos] = {
                 'reference': reference[pileupColumn.reference_pos],
                 'totalDepth': totalDepth,
-                'baseQualities': {}
+                'snvs': {},
+                'indels': {}
             }
         else:
             self.memory[pileupColumn.reference_pos]['totalDepth'] += totalDepth
@@ -89,39 +91,162 @@ class LiveVariantCaller:
             self.process_pileup_at_position(pileupColumn.reference_pos, pileup)
 
     def process_pileup_at_position(self, position: int, pileup):
-        if not pileup.is_del and not pileup.is_refskip:
-            base = pileup.alignment.query_sequence[pileup.query_position]
+        self.process_svn(position, pileup)
+        # self.process_indel(position, pileup)
 
-            if base not in self.memory[position]['baseQualities'].keys():
+    def process_svn(self, position, pileup):
+        if not pileup.is_del and not pileup.is_refskip:
+            svn = pileup.alignment.query_sequence[pileup.query_position]
+
+            if svn not in self.memory[position]['snvs'].keys():
+                self.memory[position]['snvs'][svn] = []
+            
+            self.memory[position]['snvs'][svn].append(pileup.alignment.query_qualities[pileup.query_position])
+
+    def process_indel(self, position, pileup):
+        if pileup.is_del or pileup.is_refskip:
+            indel = '-' if pileup.is_del else f'+{pileup.alignment.query_sequence[pileup.query_position]}'
+
+            if indel not in self.memory[position]['indels'].keys():
                 # We could store more information here in the memory. But as the Base Qualty is the the only information that matters for further calculation we 
                 # save memory and only store them
 
-                self.memory[position]['baseQualities'][base] = []
-            else:
-                self.memory[position]['baseQualities'][base].append(pileup.alignment.query_qualities[pileup.query_position])
+                self.memory[position]['indels'][indel] = []
 
-    def write_vcf(self, outputVfc: str):
+            if pileup.is_refskip:
+                self.memory[position]['indels'][indel].append(pileup.alignment.query_qualities[pileup.query_position])
+            else:
+                self.memory[position]['indels'][indel].append(None)
+
+
+    def prepare_variants(self):
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
         progressBar = tqdm(
             self.memory, 
-            desc=f'{timestamp} Writing VCF to {outputVfc}',
+            desc=f'{timestamp} Calculating statistics',
             total=len(self.memory.keys())
         )
 
+        variants: List[Variant] = []
+
+        for position in progressBar:
+            if self.memory[position]['totalDepth'] >= self.minTotalDepth:
+                snvs = {
+                    allele: [
+                        from_phred_scale(quality)
+                        for quality in self.memory[position]['snvs'][allele]
+                    ]
+                    for allele in self.memory[position]['snvs'].keys()
+                }
+
+                genotypeLikelihoods = {
+                    allele: genotype_likelihood(allele, snvs)
+                    for allele in snvs.keys()
+                }
+
+                sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values(), 0.0)
+                sumGenotypeLikelihoods = sumGenotypeLikelihoods if sumGenotypeLikelihoods != 0 else 1.0
+
+                for allele in snvs.keys():
+                    alleleDepth = len(snvs[allele])
+
+                    filterConstrains = [
+                        self.memory[position]['reference'] != allele,
+                        alleleDepth >= self.minAlleleDepth,
+                        alleleDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                    ]
+
+                    if all(filterConstrains):
+                        genotypeLikelihood = genotypeLikelihoods[allele]
+
+                        if genotypeLikelihood != 0:
+                            gl = math.log10(genotypeLikelihood)
+                            pl = round(-10.0 * gl)
+                        else:
+                            gl = 0
+                            pl = 0
+                        
+                        score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
+                        qual = np.mean(snvs[allele])
+
+                        variants.append({
+                            'start': position,
+                            'stop': position + 1,
+                            'alleles': (
+                                self.memory[position]['reference'], 
+                                allele
+                            ),
+                            'qual': qual,
+                            'info': {
+                                'DP': self.memory[position]['totalDepth'],
+                                'AD': alleleDepth,
+                                'GL': gl,
+                                'PL': pl,
+                                'SCORE': score
+                            }
+                        })
+
+                for indel in self.memory[position]['indels'].keys():
+                    alleleDepth = len(self.memory[position]['indels'][indel])   
+
+                    filterConstrains = [
+                        alleleDepth >= self.minAlleleDepth,
+                        alleleDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                    ]
+
+                    if all(filterConstrains):
+                        if indel == '-':
+                            variants.append({
+                                'start': position,
+                                'stop': position + 1,
+                                'alleles': (
+                                    self.memory[position]['reference'], 
+                                    '*'
+                                ),
+                                'qual': 0,
+                                'info': {
+                                    'DP': self.memory[position]['totalDepth'],
+                                    'AD': alleleDepth,
+                                    'GL': 0,
+                                    'PL': 0,
+                                    'SCORE': 0
+                                }
+                            })
+                        else:
+                            variants.append({
+                                'start': position,
+                                'stop': position + 1,
+                                'alleles': (
+                                    '*', 
+                                    indel[1:]
+                                ),
+                                'qual': 0,
+                                'info': {
+                                    'DP': self.memory[position]['totalDepth'],
+                                    'ED': alleleDepth,
+                                    'GL': 0,
+                                    'PL': 0,
+                                    'SCORE': 0
+                                }
+                            })
+        
+        return variants
+
+    def write_vcf(self, outputVfc: str):
         vcfHeader = pysam.VariantHeader()
 
         vcfHeader.add_meta('INFO', items=[
-            ('ID', 'TD'),
+            ('ID', 'DP'),
             ('Number', 1),
             ('Type', 'Integer'),
             ('Description', 'Total Depth')
         ])
 
         vcfHeader.add_meta('INFO', items=[
-            ('ID', 'ED'),
+            ('ID', 'AD'),
             ('Number', 1),
             ('Type', 'Integer'),
-            ('Description', 'Evidence Depth')
+            ('Description', 'Allele Depth')
         ])
 
         vcfHeader.add_meta('INFO', items=[
@@ -154,75 +279,74 @@ class LiveVariantCaller:
 
         vcfFile = pysam.VariantFile(outputVfc, mode='w', header=vcfHeader)
 
-        for position in progressBar:
-            if self.memory[position]['totalDepth'] >= self.minTotalDepth:
-                errorProbabilities = {
-                    allele: [
-                        from_phred_scale(quality)
-                        for quality in self.memory[position]['baseQualities'][allele]
-                    ]
-                    for allele in self.memory[position]['baseQualities'].keys()
-                }
+        variants = self.prepare_variants()
+        # gvariants = self.concat_deletions(variants)
 
-                genotypeLikelihoods = {
-                    allele: genotype_likelihood(allele, errorProbabilities)
-                    for allele in errorProbabilities.keys()
-                }
 
-                sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values(), 0.0)
-                sumGenotypeLikelihoods = sumGenotypeLikelihoods if sumGenotypeLikelihoods != 0 else 1.0
-
-                variants = []
-
-                for allele in errorProbabilities.keys():
-                    evidenceDepth = len(errorProbabilities[allele])
-
-                    filterConstrains = [
-                        self.memory[position]['reference'] != allele,
-                        evidenceDepth >= self.minEvidenceDepth,
-                        evidenceDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
-                    ]
-
-                    if all(filterConstrains):
-                        genotypeLikelihood = genotypeLikelihoods[allele]
-
-                        if genotypeLikelihood != 0:
-                            gl = math.log10(genotypeLikelihood)
-                            pl = round(-10.0 * gl)
-                        else:
-                            gl = 0
-                            pl = 0
-                        
-                        score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
-                        qual = np.mean(errorProbabilities[allele])
-
-                        variants.append({
-                            'start': position,
-                            'stop': position + 1,
-                            'alleles': (
-                                self.memory[position]['reference'], 
-                                allele
-                            ),
-                            'qual': qual,
-                            'info': {
-                                'TD': self.memory[position]['totalDepth'],
-                                'ED': evidenceDepth,
-                                'GL': gl,
-                                'PL': pl,
-                                'SCORE': score
-                            }
-                        })
-
-                for index, variant in enumerate(sorted(variants, key=lambda variant: variant['info']['SCORE'])):
-                    if self.maxVariants == 0 or index < self.maxVariants:
-                        vcfFile.write(
-                            vcfFile.new_record(
-                                start=variant['start'], 
-                                stop=variant['stop'],
-                                alleles=variant['alleles'],
-                                qual=variant['qual'],
-                                info=variant['info'],
-                            )
-                        )
+        for index, variant in enumerate(sorted(variants, key=lambda variant: (variant['start'], variant['info']['SCORE']))):                
+            vcfFile.write(
+                vcfFile.new_record(
+                    start=variant['start'], 
+                    stop=variant['stop'],
+                    alleles=variant['alleles'],
+                    qual=variant['qual'],
+                    info=variant['info'],
+                )
+            )
 
         vcfFile.close()
+
+    def prev_variant(self, variants: List[Variant], variant: Variant):
+        return next(
+            (
+                v for v in variants
+                if v['start'] == variant['start'] - 1
+            ), 
+            None
+        )
+
+    def next_variant(self, variants: List[Variant], variant: Variant):
+        return next(
+            (
+                v for v in variants
+                if v['start'] == variant['start'] + 1
+            ), 
+            None
+        )
+
+    def concat_deletions(self, variants: List[Variant]):
+        concatinatedVariants: List[Variant] = []
+        currentVariant: Variant = None
+
+        for variant in variants:
+            if variant['alleles'][1] == '*':
+                nextVariant = self.next_variant(variants, variant)
+
+                if nextVariant:
+                    if not currentVariant:
+                        currentVariant = variant
+                    else:
+                        currentVariant = {
+                            'start': currentVariant['start'],
+                            'stop': variant['stop'],
+                            'alleles': (
+                                f'{currentVariant["alleles"][0]}{variant["alleles"][0]}',
+                                '*'
+                            ),
+                            'qual': variant['qual'], # must be combined
+                            'info': variant['info'] # must be combined
+
+                        }
+                else: 
+                    if currentVariant:
+                        concatinatedVariants.append(currentVariant)
+                        currentVariant = None
+
+            
+            else:
+                concatinatedVariants.append(variant)
+
+        return concatinatedVariants
+
+    def concat_insertions(self, variants: List[Variant]):
+        return variants
