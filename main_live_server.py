@@ -12,56 +12,53 @@ logging.basicConfig(filename='log/vc_server.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
-config = configparser.ConfigParser()
-config.read('settings.config')
-HOST = config['BASIC_PARAMS']['HOST']
-PORT = int(config['BASIC_PARAMS']['PORT'])
-queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
-task_queue = VCQueue(queue_size)
 
+class VCServer:
 
-def _shutdown_gracefully(sock):
-    logging.info('Stopping server in 10 seconds...')
-    print('Stopping server in 10 seconds...')
-    time.sleep(10)
-    sock.shutdown(socket.SHUT_RDWR)
-    sock.close()
-    return True
+    def __init__(self):
+        config = configparser.ConfigParser()
+        config.read('settings.config')
+        self.HOST = config['BASIC_PARAMS']['HOST']
+        self.PORT = int(config['BASIC_PARAMS']['PORT'])
+        self.queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
+        self.task_queue = VCQueue(self.queue_size)
 
+    def run(self):
 
-def _run():
-    task_queue = VCQueue(queue_size)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((self.HOST, self.PORT))
+            sock.listen()
+            logging.info(f'Running now under {self.HOST}:{self.PORT}...')
+            print(f'Running now under {self.HOST}:{self.PORT}...')
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind((HOST, PORT))
-        sock.listen()
-        logging.info(f'Running now under {HOST}:{PORT}...')
-        print(f'Running now under {HOST}:{PORT}...')
+            while True:
+                connection, address = sock.accept()
+                with connection:
+                    data = connection.recv(1024)
+                    logging.info(f"Received {data!r}")
+                    recv_data = data.decode('utf-8').split(' ')
 
-        while True:
-            connection, address = sock.accept()
-            with connection:
-                data = connection.recv(1024)
-                logging.info(f"Received {data!r}")
-                recv_data = data.decode('utf-8').split(' ')
+                    if recv_data[0] == 'stop':
+                        self._shutdown_gracefully(sock)
+                    elif recv_data[0] == 'process' or recv_data[0] == 'write':
 
-                if recv_data[0] == 'stop':
-                    _shutdown_gracefully(sock)
-                elif recv_data[0] == 'process' or recv_data[0] == 'write':
+                        self.task_queue.put((recv_data[0], recv_data[1]))
 
-                    task_queue.put((recv_data[0], recv_data[1]))
+                    else:
+                        logging.error(f'No such action: {recv_data[0]}')
 
-                else:
-                    logging.error(f'No such action: {recv_data[0]}')
+                    while not self.task_queue.is_empty():
+                        self.task_queue.process()
 
-                while not task_queue.is_empty():
-                    task_queue.process()
-
-
-# with daemon.DaemonContext():
-#    logging.info("LOL")
-# serve_forever()
+    def _shutdown_gracefully(self, sock):
+        logging.info('Stopping server in 10 seconds...')
+        print('Stopping server in 10 seconds...')
+        time.sleep(10)
+        sock.shutdown(socket.SHUT_RDWR)
+        sock.close()
+        return True
 
 
 if __name__ == '__main__':
-    _run()
+    server = VCServer()
+    server.run()

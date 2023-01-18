@@ -1,5 +1,6 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import client_server
 import logging
 import time
 import argparse
@@ -27,6 +28,7 @@ class Watcher:
         try:
             while True:
                 time.sleep(1)
+        # TODO: Reconsider exception type
         except:
             self.observer.stop()
         self.observer.join()
@@ -34,15 +36,19 @@ class Watcher:
         logging.info('Watcher terminated.')
 
 
-class MyHandler(FileSystemEventHandler):
+class SeqHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
-        print(event)  # Your code here
+        file_extension = os.path.splitext(event.src_path)
+        if not event.is_directory and file_extension[-1] == '.txt':
+            if event.event_type == 'created' or event.event_type == 'modified':
+                logging.info(f'Event detector: {event.event_type} in {event.src_path}')
+                print(f'Event detector: {event.event_type} in {event.src_path}')  # Your code here
 
 
 if __name__ == '__main__':
 
-    path = '.'
+    path = ''
 
     if len(sys.argv) > 0:
         path = sys.argv[1]
@@ -53,7 +59,7 @@ if __name__ == '__main__':
     if os.path.exists(path) and not os.path.isfile(path):
         logging.info(f'Provided path: {path}')
         print(f'Provided path: {path}')
-        w = Watcher(path, MyHandler())
+        w = Watcher(path, SeqHandler())
         w.run()
     else:
         logging.error(f'Path {path} does not exist or is a file.')
