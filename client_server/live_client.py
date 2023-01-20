@@ -1,11 +1,11 @@
 import argparse
 import socket
-import configparser
+import util.io as iout
 import logging
 import os
 from pathlib import Path
 
-logging.basicConfig(filename='log/vc_client.log',
+logging.basicConfig(filename='../log/vc_client.log',
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
@@ -58,15 +58,12 @@ def _params_is_valid(action: str, params: str) -> bool:
 
 def _run():
     _construct_cli()
-    config = configparser.ConfigParser()
-    config.read('settings.config')
-    host = config['BASIC_PARAMS']['HOST']
-    port = int(config['BASIC_PARAMS']['PORT'])
+
     args = parser.parse_args()
     action = ''
     params = ''
 
-    c = VCClient(host, port)
+    c = VCClient(*iout.get_address())
 
     if args.stop is not None:
         action = 'stop'
@@ -90,5 +87,4 @@ def _run():
 
 if __name__ == '__main__':
     logging.info(f'Welcome... Setting up client')
-
     _run()

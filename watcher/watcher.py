@@ -1,9 +1,8 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import main_live_server.VCServer from main_live_server
+from client_server.live_client import VCClient
 import logging
 import time
-import argparse
 import sys
 import os
 
@@ -14,10 +13,11 @@ logging.basicConfig(filename='../log/watcher.log',
 
 class Watcher:
 
-    def __init__(self, directory, handler=FileSystemEventHandler()):
+    def __init__(self, directory, handler=FileSystemEventHandler(), host, port):
         self.observer = Observer()
         self.handler = handler
         self.directory = directory
+        self.client = VCClient()
 
     def run(self):
         self.observer.schedule(
@@ -43,7 +43,9 @@ class SeqHandler(FileSystemEventHandler):
         if not event.is_directory and file_extension[-1] == '.txt':
             if event.event_type == 'created' or event.event_type == 'modified':
                 logging.info(f'Event detector: {event.event_type} in {event.src_path}')
-                print(f'Event detector: {event.event_type} in {event.src_path}')  # Your code here
+                print(f'Event detector: {event.event_type} in {event.src_path}')
+
+
 
 
 if __name__ == '__main__':
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     if os.path.exists(path) and not os.path.isfile(path):
         logging.info(f'Provided path: {path}')
         print(f'Provided path: {path}')
-        w = Watcher(path, SeqHandler())
+        w = Watcher(path, SeqHandler(), host, port)
         w.run()
     else:
         logging.error(f'Path {path} does not exist or is a file.')
