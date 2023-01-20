@@ -27,8 +27,10 @@ class VCClient:
                 sock.sendall(payload)
                 sock.close()
                 logging.info(f'Closing connection to server under {self.host}:{self.port}...')
+                print(f'Closing connection to server under {self.host}:{self.port}...')
         except ConnectionRefusedError:
             logging.error(f'Not able to connect to {self.host}:{self.port}. Is server running?')
+            print(f'Not able to connect to {self.host}:{self.port}. Is server running?')
 
 
 def _construct_cli():

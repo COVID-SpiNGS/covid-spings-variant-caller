@@ -19,7 +19,7 @@ class Watcher:
         self.recursive = cio.get_watch_recursively()
         self.interval = cio.get_watcher_interval()
         self.client = VCClient(*cio.get_address())
-        self.handler = SeqHandler(cio.get_supported_extensions())
+        self.handler = SeqHandler(self.client, cio.get_supported_extensions())
         self.observer = Observer()
 
     def run(self):
@@ -41,7 +41,8 @@ class Watcher:
 
 class SeqHandler(FileSystemEventHandler):
 
-    def __init__(self, supported_extensions):
+    def __init__(self, client, supported_extensions):
+        self.client = client
         self.supported_extensions = supported_extensions
 
     def on_any_event(self, event):
@@ -50,7 +51,10 @@ class SeqHandler(FileSystemEventHandler):
                 if event.event_type == 'created' or event.event_type == 'modified':
                     logging.info(f'Event detector: {event.event_type} in {event.src_path}')
                     print(f'Event detector: {event.event_type} in {event.src_path}')
-                    print(self.supported_extensions, type(self.supported_extensions))
+                    file = event.src_path
+                    # stop, process, write
+                    self.client.talk_to_server('process', file)
+                    self.client.talk_to_server('write', file)
 
     def on_modified(self, event):
         pass
