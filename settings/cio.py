@@ -26,5 +26,5 @@ def get_watch_recursively() -> bool:
     return bool(config['WATCHER_PARAMS']['WATCH_RECURSIVELY'])
 
 
-def get_supported_extensions() -> str:
-    return config['WATCHER_PARAMS']['SUPPORTED_EXTENSIONS']
+def get_supported_extensions() -> list[str]:
+    return config['WATCHER_PARAMS']['SUPPORTED_EXTENSIONS'].split(',')

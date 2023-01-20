@@ -45,14 +45,13 @@ class SeqHandler(FileSystemEventHandler):
         self.supported_extensions = supported_extensions
 
     def on_any_event(self, event):
-        file_extension = os.path.splitext(event.src_path)
-        if not event.is_directory and file_extension[-1] == '.txt':
-            if event.event_type == 'created' or event.event_type == 'modified':
-                logging.info(f'Event detector: {event.event_type} in {event.src_path}')
-                print(f'Event detector: {event.event_type} in {event.src_path}')
+        if not event.is_directory:
+            if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
+                if event.event_type == 'created' or event.event_type == 'modified':
+                    logging.info(f'Event detector: {event.event_type} in {event.src_path}')
+                    print(f'Event detector: {event.event_type} in {event.src_path}')
+                    print(self.supported_extensions, type(self.supported_extensions))
 
-                if path.endswith(self.supported_extensions):
-                    print('lol')
 
     def on_modified(self, event):
         pass
