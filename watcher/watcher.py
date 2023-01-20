@@ -52,7 +52,6 @@ class SeqHandler(FileSystemEventHandler):
                     print(f'Event detector: {event.event_type} in {event.src_path}')
                     print(self.supported_extensions, type(self.supported_extensions))
 
-
     def on_modified(self, event):
         pass
 

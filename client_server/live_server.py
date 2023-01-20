@@ -15,10 +15,11 @@ logging.basicConfig(filename='../log/vc_server.log',
 
 class VCServer:
 
-    def __init__(self, host, port, queue_size):
+    def __init__(self):
+        host, port = cio.get_address()
         self.host = host
         self.port = port
-        self.queue_size = queue_size
+        self.queue_size = cio.get_queue_size()
         self.task_queue = VCQueue(self.queue_size)
 
     def run(self):
@@ -58,5 +59,5 @@ class VCServer:
 
 
 if __name__ == '__main__':
-    server = VCServer(*cio.get_address(), cio.get_queue_size())
+    server = VCServer()
     server.run()
