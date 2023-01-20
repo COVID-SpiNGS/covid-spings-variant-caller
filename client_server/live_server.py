@@ -3,10 +3,10 @@ import socket
 import time
 import threading
 import daemon
+import settings.cio as cio
 from client_server.vc_exception import VCException
 from client_server.vc_queue import VCQueue
 import logging
-import configparser
 
 logging.basicConfig(filename='../log/vc_server.log',
                     level=logging.DEBUG,
@@ -58,10 +58,5 @@ class VCServer:
 
 
 if __name__ == '__main__':
-    config = configparser.ConfigParser()
-    config.read('settings.config')
-    host = config['BASIC_PARAMS']['HOST']
-    port = int(config['BASIC_PARAMS']['PORT'])
-    queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
-    server = VCServer(host, port, queue_size)
+    server = VCServer(*cio.get_address(), cio.get_queue_size())
     server.run()

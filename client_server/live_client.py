@@ -1,6 +1,6 @@
 import argparse
 import socket
-import util.io as iout
+import settings.cio as cio
 import logging
 import os
 from pathlib import Path
@@ -63,7 +63,7 @@ def _run():
     action = ''
     params = ''
 
-    c = VCClient(*iout.get_address())
+    c = VCClient(*cio.get_address())
 
     if args.stop is not None:
         action = 'stop'
