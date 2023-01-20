@@ -22,7 +22,6 @@ class Watcher:
         self.handler = SeqHandler(cio.get_supported_extensions())
         self.observer = Observer()
 
-
     def run(self):
         self.observer.schedule(
             self.handler, self.directory, recursive=self.recursive)

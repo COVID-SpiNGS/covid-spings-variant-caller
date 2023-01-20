@@ -1,12 +1,12 @@
 import configparser
 
 config = configparser.ConfigParser()
-config.read('settings.config')
+config.read('../settings.config')
 
 
 # Basic params
 def get_address() -> (str, int):
-    return '127.0.0.1', 65342#config['BASIC_PARAMS']['HOST'], int(config['BASIC_PARAMS']['PORT'])
+    return config['BASIC_PARAMS']['HOST'], int(config['BASIC_PARAMS']['PORT'])
 
 
 def get_queue_size() -> int:
