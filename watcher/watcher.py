@@ -1,6 +1,6 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import client_server
+import main_live_server.VCServer from main_live_server
 import logging
 import time
 import argparse

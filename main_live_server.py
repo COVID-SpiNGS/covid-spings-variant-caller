@@ -15,21 +15,19 @@ logging.basicConfig(filename='log/vc_server.log',
 
 class VCServer:
 
-    def __init__(self):
-        config = configparser.ConfigParser()
-        config.read('settings.config')
-        self.HOST = config['BASIC_PARAMS']['HOST']
-        self.PORT = int(config['BASIC_PARAMS']['PORT'])
-        self.queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
+    def __init__(self, host, port, queue_size):
+        self.host = host
+        self.port = port
+        self.queue_size = queue_size
         self.task_queue = VCQueue(self.queue_size)
 
     def run(self):
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.bind((self.HOST, self.PORT))
+            sock.bind((self.host, self.port))
             sock.listen()
-            logging.info(f'Running now under {self.HOST}:{self.PORT}...')
-            print(f'Running now under {self.HOST}:{self.PORT}...')
+            logging.info(f'Running now under {self.host}:{self.port}...')
+            print(f'Running now under {self.host}:{self.port}...')
 
             while True:
                 connection, address = sock.accept()
@@ -60,5 +58,10 @@ class VCServer:
 
 
 if __name__ == '__main__':
-    server = VCServer()
+    config = configparser.ConfigParser()
+    config.read('settings.config')
+    host = config['BASIC_PARAMS']['HOST']
+    port = int(config['BASIC_PARAMS']['PORT'])
+    queue_size = int(config['BASIC_PARAMS']['QUEUE_SIZE'])
+    server = VCServer(host, port, queue_size)
     server.run()

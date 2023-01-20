@@ -10,10 +10,25 @@ logging.basicConfig(filename='log/vc_client.log',
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
 parser = argparse.ArgumentParser()
-config = configparser.ConfigParser()
-config.read('settings.config')
-HOST = config['BASIC_PARAMS']['HOST']
-PORT = int(config['BASIC_PARAMS']['PORT'])
+
+
+class VCClient:
+    def __init__(self, host, port):
+
+        self.host = host
+        self.port = port
+
+    def talk_to_server(self, action: str, params: str):
+        payload = bytes(action + ' ' + params, encoding='utf-8')
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                logging.info(f'Connecting to server under {self.host}:{self.port}...')
+                sock.connect((self.host, self.port))
+                sock.sendall(payload)
+                sock.close()
+                logging.info(f'Closing connection to server under {self.host}:{self.port}...')
+        except ConnectionRefusedError:
+            logging.error(f'Not able to connect to {self.host}:{self.port}. Is server running?')
 
 
 def _construct_cli():
@@ -41,24 +56,17 @@ def _params_is_valid(action: str, params: str) -> bool:
     return valid
 
 
-def _talk_to_server(action: str, params: str):
-    payload = bytes(action + ' ' + params, encoding='utf-8')
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            logging.info(f'Connecting to server under {HOST}:{PORT}...')
-            sock.connect((HOST, PORT))
-            sock.sendall(payload)
-            sock.close()
-            logging.info(f'Closing connection to server under {HOST}:{PORT}...')
-    except ConnectionRefusedError:
-        logging.error(f'Not able to connect to {HOST}:{PORT}. Is server running?')
-
-
 def _run():
     _construct_cli()
+    config = configparser.ConfigParser()
+    config.read('settings.config')
+    host = config['BASIC_PARAMS']['HOST']
+    port = int(config['BASIC_PARAMS']['PORT'])
     args = parser.parse_args()
     action = ''
     params = ''
+
+    c = VCClient(host, port)
 
     if args.stop is not None:
         action = 'stop'
@@ -75,11 +83,12 @@ def _run():
 
     if action != '':
         if _params_is_valid(action, params):
-            _talk_to_server(action, params)
+            c.talk_to_server(action, params)
         else:
             logging.error(f'{params} is invalid... please make sure path exists.')
 
 
 if __name__ == '__main__':
     logging.info(f'Welcome... Setting up client')
+
     _run()
