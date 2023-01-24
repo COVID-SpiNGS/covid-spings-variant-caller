@@ -1,7 +1,7 @@
 import logging
 from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
-from variant_caller.config import minBaseQuality, minMappingQuality, minTotalDepth
+import settings.cio as cio
 import configparser
 from client_server.vc_exception import VCException
 
@@ -10,9 +10,9 @@ config.read('settings.config')
 
 liveVariantCaller = LiveVariantCaller(
     config['VARIANT_CALLER_PARAMS']['REF'],
-    minBaseQuality,
-    minMappingQuality,
-    minTotalDepth,
+    cio.get_min_base_quality(),
+    cio.get_min_mapping_quality(),
+    cio.get_min_total_depth(),
     int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth']),
     float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio']),
     int(config['VARIANT_CALLER_PARAMS']['maxVariants'])

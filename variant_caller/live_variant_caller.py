@@ -23,9 +23,8 @@ class LiveVariantCaller:
         self.minAlleleDepth = minAlleleDepth
         self.minEvidenceRatio = minEvidenceRatio
         self.maxVariants = maxVariants
-        
         self.fastaFile = pysam.FastaFile(referenceFasta)
-
+        self.memory = {}
         self.reset_memory()
 
     def __del__(self):
