@@ -18,12 +18,13 @@ def get_queue_size() -> int:
 def get_reference() -> str:
     return config['VARIANT_CALLER_PARAMS']['reference']
 
+
 def get_min_evidence_depth() -> int:
     return int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth'])
 
 
-def get_min_evidence_ratio() -> int:
-    return int(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio'])
+def get_min_evidence_ratio() -> float:
+    return float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio'])
 
 
 def get_max_variants() -> int:
