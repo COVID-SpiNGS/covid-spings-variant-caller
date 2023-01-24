@@ -4,8 +4,11 @@ import settings.cio as cio
 import logging
 import os
 from pathlib import Path
+from os.path import dirname, abspath
 
-logging.basicConfig(filename='../log/vc_client.log',
+log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
+
+logging.basicConfig(filename=os.path.join(log_dir, 'vc_client.log'),
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 

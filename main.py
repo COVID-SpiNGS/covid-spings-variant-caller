@@ -3,6 +3,7 @@ from os.path import getsize
 
 import time
 
+
 def main():
     # start = time.time()
 
@@ -12,8 +13,6 @@ def main():
     minTotalDepth = 10
     minMappingQuality = 20
     minBaseQuality = 30
-
-
 
     liveVariantCaller = LiveVariantCaller(
         'input/reference-covid.fasta',
@@ -72,5 +71,5 @@ def main():
     # print('total', time.time() - start)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

@@ -6,8 +6,11 @@ import logging
 import time
 import sys
 import os
+from os.path import dirname, abspath
 
-logging.basicConfig(filename='../log/watcher.log',
+log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
+
+logging.basicConfig(filename=os.path.join(log_dir, 'watcher.log'),
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 

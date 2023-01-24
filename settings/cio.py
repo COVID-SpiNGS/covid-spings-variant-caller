@@ -1,7 +1,10 @@
 import configparser
+import os
 
 config = configparser.ConfigParser()
-config.read('../settings.config')
+path_current_directory = os.path.dirname(__file__)
+path_config_file = os.path.join(path_current_directory, 'vc_settings.config')
+config.read(path_config_file)
 
 
 # Basic params
@@ -11,6 +14,10 @@ def get_address() -> (str, int):
 
 def get_queue_size() -> int:
     return int(config['BASIC_PARAMS']['QUEUE_SIZE'])
+
+
+def get_temp_dir() -> str:
+    return config['BASIC_PARAMS']['TEMP_DIR']
 
 
 # Variant Caller Params

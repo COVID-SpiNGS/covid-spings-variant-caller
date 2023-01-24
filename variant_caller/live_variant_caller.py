@@ -1,4 +1,3 @@
-
 import functools
 import operator
 import pickle
@@ -15,8 +14,10 @@ from time import strftime, localtime
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
+
 class LiveVariantCaller:
-    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int, minAlleleDepth: int, minEvidenceRatio: float, maxVariants: int):
+    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int,
+                 minAlleleDepth: int, minEvidenceRatio: float, maxVariants: int):
         self.minBaseQuality = minBaseQuality
         self.minMappingQuality = minMappingQuality
         self.minTotalDepth = minTotalDepth
@@ -46,12 +47,12 @@ class LiveVariantCaller:
         print(f'{timestamp} Loading checkpoint {filename}')
 
         file = open(filename, 'rb')
-        self.memory,  = pickle.load(file)
+        self.memory, = pickle.load(file)
         file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
-        
+
         pileupColumns = bamFile.pileup(
             min_mapping_quality=self.minMappingQuality,
             min_base_quality=self.minBaseQuality,
@@ -60,14 +61,13 @@ class LiveVariantCaller:
 
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
         progressBar = tqdm(
-            pileupColumns, 
+            pileupColumns,
             desc=f'{timestamp} Processing {inputBam}',
             total=bamFile.get_reference_length(self.fastaFile.references[referenceIndex])
         )
 
         for pileupColumn in progressBar:
             self.process_pileup_column(pileupColumn)
-
 
         bamFile.close()
 
@@ -99,7 +99,7 @@ class LiveVariantCaller:
 
             if svn not in self.memory[position]['snvs'].keys():
                 self.memory[position]['snvs'][svn] = []
-            
+
             self.memory[position]['snvs'][svn].append(pileup.alignment.query_qualities[pileup.query_position])
 
     def process_indel(self, position, pileup):
@@ -117,11 +117,10 @@ class LiveVariantCaller:
             else:
                 self.memory[position]['indels'][indel].append(None)
 
-
     def prepare_variants(self):
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
         progressBar = tqdm(
-            self.memory, 
+            self.memory,
             desc=f'{timestamp} Calculating statistics',
             total=len(self.memory.keys())
         )
@@ -164,7 +163,7 @@ class LiveVariantCaller:
                         else:
                             gl = 0
                             pl = 0
-                        
+
                         score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
                         qual = np.mean(snvs[allele])
 
@@ -172,7 +171,7 @@ class LiveVariantCaller:
                             'start': position,
                             'stop': position + 1,
                             'alleles': (
-                                self.memory[position]['reference'], 
+                                self.memory[position]['reference'],
                                 allele
                             ),
                             'qual': qual,
@@ -186,7 +185,7 @@ class LiveVariantCaller:
                         })
 
                 for indel in self.memory[position]['indels'].keys():
-                    alleleDepth = len(self.memory[position]['indels'][indel])   
+                    alleleDepth = len(self.memory[position]['indels'][indel])
 
                     filterConstrains = [
                         alleleDepth >= self.minAlleleDepth,
@@ -199,7 +198,7 @@ class LiveVariantCaller:
                                 'start': position,
                                 'stop': position + 1,
                                 'alleles': (
-                                    self.memory[position]['reference'], 
+                                    self.memory[position]['reference'],
                                     '*'
                                 ),
                                 'qual': 0,
@@ -216,7 +215,7 @@ class LiveVariantCaller:
                                 'start': position,
                                 'stop': position + 1,
                                 'alleles': (
-                                    '*', 
+                                    '*',
                                     indel[1:]
                                 ),
                                 'qual': 0,
@@ -228,7 +227,7 @@ class LiveVariantCaller:
                                     'SCORE': 0
                                 }
                             })
-        
+
         return variants
 
     def write_vcf(self, outputVfc: str):
@@ -252,14 +251,16 @@ class LiveVariantCaller:
             ('ID', 'GL'),
             ('Number', 1),
             ('Type', 'Float'),
-            ('Description', 'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
+            ('Description',
+             'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
         ])
 
         vcfHeader.add_meta('INFO', items=[
             ('ID', 'PL'),
             ('Number', 1),
             ('Type', 'Integer'),
-            ('Description', 'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
+            ('Description',
+             'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
         ])
 
         vcfHeader.add_meta('INFO', items=[
@@ -268,7 +269,6 @@ class LiveVariantCaller:
             ('Type', 'Float'),
             ('Description', 'Custom scoring function')
         ])
-
 
         for reference in self.fastaFile.references:
             vcfHeader.contigs.add(
@@ -281,11 +281,11 @@ class LiveVariantCaller:
         variants = self.prepare_variants()
         # gvariants = self.concat_deletions(variants)
 
-
-        for index, variant in enumerate(sorted(variants, key=lambda variant: (variant['start'], variant['info']['SCORE']))):                
+        for index, variant in enumerate(
+                sorted(variants, key=lambda variant: (variant['start'], variant['info']['SCORE']))):
             vcfFile.write(
                 vcfFile.new_record(
-                    start=variant['start'], 
+                    start=variant['start'],
                     stop=variant['stop'],
                     alleles=variant['alleles'],
                     qual=variant['qual'],
@@ -300,7 +300,7 @@ class LiveVariantCaller:
             (
                 v for v in variants
                 if v['start'] == variant['start'] - 1
-            ), 
+            ),
             None
         )
 
@@ -309,7 +309,7 @@ class LiveVariantCaller:
             (
                 v for v in variants
                 if v['start'] == variant['start'] + 1
-            ), 
+            ),
             None
         )
 
@@ -332,16 +332,16 @@ class LiveVariantCaller:
                                 f'{currentVariant["alleles"][0]}{variant["alleles"][0]}',
                                 '*'
                             ),
-                            'qual': variant['qual'], # must be combined
-                            'info': variant['info'] # must be combined
+                            'qual': variant['qual'],  # must be combined
+                            'info': variant['info']  # must be combined
 
                         }
-                else: 
+                else:
                     if currentVariant:
                         concatinatedVariants.append(currentVariant)
                         currentVariant = None
 
-            
+
             else:
                 concatinatedVariants.append(variant)
 

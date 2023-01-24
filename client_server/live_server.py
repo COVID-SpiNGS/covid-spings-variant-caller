@@ -3,12 +3,16 @@ import socket
 import time
 import threading
 import daemon
+import os
 import settings.cio as cio
 from client_server.vc_exception import VCException
+from os.path import dirname, abspath
 from client_server.vc_queue import VCQueue
 import logging
 
-logging.basicConfig(filename='../log/vc_server.log',
+log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
+
+logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 
@@ -38,7 +42,7 @@ class VCServer:
                     recv_data = data.decode('utf-8').split(' ')
 
                     if recv_data[0] == 'stop':
-                        self._shutdown_gracefully(sock)
+                        ret = self._shutdown_gracefully(sock)
                     elif recv_data[0] == 'process' or recv_data[0] == 'write':
 
                         self.task_queue.put((recv_data[0], recv_data[1]))
@@ -50,12 +54,15 @@ class VCServer:
                         self.task_queue.process()
 
     def _shutdown_gracefully(self, sock):
-        logging.info('Stopping server in 10 seconds...')
-        print('Stopping server in 10 seconds...')
-        time.sleep(10)
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
-        return True
+        try:
+            logging.info('Stopping server in 10 seconds...')
+            print('Stopping server in 10 seconds...')
+            time.sleep(10)
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+            return 0
+        except:
+            return -1
 
 
 if __name__ == '__main__':
