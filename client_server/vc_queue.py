@@ -6,7 +6,6 @@ import settings.cio as cio
 from client_server.vc_exception import VCException
 from os.path import dirname, abspath
 
-
 # try:
 # task_queue = VCQueue(queue_size)
 # TODO: Reconsider exception type and size
@@ -14,10 +13,10 @@ from os.path import dirname, abspath
 #   logging.error('Incorrect queue size specified.')
 
 log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
-
 logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
                     level=logging.DEBUG,
-                    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s - VC_Q |')
+                    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+
 
 class VCQueue:
     def __init__(self, size: int):
@@ -25,7 +24,7 @@ class VCQueue:
             self.size = size
             self.q = Queue(maxsize=self.size)
             self.live_variant_caller = LiveVariantCaller(
-                '../' + cio.get_reference(),
+                os.path.join(dirname(dirname(abspath(__file__))), cio.get_reference()),
                 cio.get_min_base_quality(),
                 cio.get_min_mapping_quality(),
                 cio.get_min_total_depth(),
@@ -61,10 +60,12 @@ class VCQueue:
 
     def _process_bam(self, path: str):
         logging.info(f'Processing BAM with path {path}')
-        checkpoint = self.temp_dir + '/' + os.path.basename(path)
+        basename = os.path.basename(path)
+        checkpoint = os.path.join(self.temp_dir, basename)
         if os.path.exists(checkpoint):
+            print(f'Checkpoint for {basename} found')
+            logging.debug(f'Checkpoint for {basename} found')
             self.live_variant_caller.load_checkpoint(checkpoint)
-
         self.live_variant_caller.process_bam(path)
         self.live_variant_caller.create_checkpoint(checkpoint)
 

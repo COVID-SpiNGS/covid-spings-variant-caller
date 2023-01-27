@@ -4,6 +4,8 @@ import pickle
 import math
 from typing import List
 
+import os
+
 import pysam
 import numpy as np
 
@@ -13,6 +15,7 @@ from time import strftime, localtime
 
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
+
 
 
 class LiveVariantCaller:
@@ -51,6 +54,7 @@ class LiveVariantCaller:
         file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
+        print(os.getcwd())
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
 
         pileupColumns = bamFile.pileup(

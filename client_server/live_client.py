@@ -87,6 +87,7 @@ def _run():
         if _params_is_valid(action, params):
             c.talk_to_server(action, params)
         else:
+            print(f'{params} is invalid... please make sure path exists.')
             logging.error(f'{params} is invalid... please make sure path exists.')
 
 

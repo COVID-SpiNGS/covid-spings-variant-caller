@@ -38,17 +38,19 @@ class VCServer:
                 connection, address = sock.accept()
                 with connection:
                     data = connection.recv(1024)
-                    logging.info(f"Received {data!r}")
+                    logging.info(f'Received {data!r}')
+                    print(f'Received {data!r}')
+
                     recv_data = data.decode('utf-8').split(' ')
 
                     if recv_data[0] == 'stop':
                         ret = self._shutdown_gracefully(sock)
                     elif recv_data[0] == 'process' or recv_data[0] == 'write':
-
+                        logging.info(f'Received {data[0]} with argument {data[1]}')
                         self.task_queue.put((recv_data[0], recv_data[1]))
-
                     else:
                         logging.error(f'No such action: {recv_data[0]}')
+                        print(f'No such action: {recv_data[0]}')
 
                     while not self.task_queue.is_empty():
                         self.task_queue.process()
