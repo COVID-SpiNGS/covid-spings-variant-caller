@@ -20,6 +20,10 @@ def get_temp_dir() -> str:
     return config['BASIC_PARAMS']['TEMP_DIR']
 
 
+def get_temp_file_extension() -> str:
+    return config['BASIC_PARAMS']['TEMP_FILE_EXTENSION']
+
+
 # Variant Caller Params
 
 def get_reference() -> str:

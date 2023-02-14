@@ -23,6 +23,7 @@ class VCQueue:
         if 10 >= size >= 1:
             self.size = size
             self.q = Queue(maxsize=self.size)
+            self.current_size = 0
             self.live_variant_caller = LiveVariantCaller(
                 os.path.join(dirname(dirname(abspath(__file__))), cio.get_reference()),
                 cio.get_min_base_quality(),
@@ -40,19 +41,25 @@ class VCQueue:
 
     def put(self, action: str):
         self.q.put(action)
+        self.current_size += 1
 
     def put(self, action: (str, str)):
         self.q.put(action)
+        self.current_size += 1
 
     def process(self):
         if not self.q.empty():
             (action, path) = self.q.get()
+            logging.debug(f'Queue size atm is {self.q.qsize()}')
+            print(f'Queue size atm is {self.q.qsize()}')
 
             if action == 'process':
                 self._process_bam(path)
 
             elif action == 'write':
                 self._write_vcf(path)
+
+            self.current_size -= 1
 
     def _write_vcf(self, path: str):
         logging.info(f'Writing VCF to {path}')
@@ -61,13 +68,21 @@ class VCQueue:
     def _process_bam(self, path: str):
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)
-        checkpoint = os.path.join(self.temp_dir, basename)
+        checkpoint = os.path.join(self.temp_dir, basename + '.pkl')
         if os.path.exists(checkpoint):
             print(f'Checkpoint for {basename} found')
             logging.debug(f'Checkpoint for {basename} found')
             self.live_variant_caller.load_checkpoint(checkpoint)
-        self.live_variant_caller.process_bam(path)
-        self.live_variant_caller.create_checkpoint(checkpoint)
+        if os.path.exists(basename):
+            print(f'running under: {path}')
+            self.live_variant_caller.process_bam(path)
+            self.live_variant_caller.create_checkpoint(checkpoint)
+        else:
+            logging.error(f'{path} does not exist')
+            print(f'{path} does not exist')
 
-    def is_empty(self):
+    def length(self) -> int:
+        return self.q.qsize()
+
+    def is_empty(self) -> bool:
         return self.q.empty()

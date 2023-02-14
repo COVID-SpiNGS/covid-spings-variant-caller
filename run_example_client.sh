@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python -m main_live_client -write xddfyz
+python3 -m client_server.live_client --process

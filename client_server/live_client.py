@@ -46,7 +46,7 @@ def _params_is_valid(action: str, params: str) -> bool:
     valid = False
 
     if action.casefold() == 'process':
-        if params.endswith('.bam') and os.path.isfile(params):
+        if params.endswith('.bam') or params.endswith('.sam') and os.path.isfile(params):
             valid = True
 
     if action.casefold() == 'write':

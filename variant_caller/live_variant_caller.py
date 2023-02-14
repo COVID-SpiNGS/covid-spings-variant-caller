@@ -50,11 +50,10 @@ class LiveVariantCaller:
         print(f'{timestamp} Loading checkpoint {filename}')
 
         file = open(filename, 'rb')
-        self.memory, = pickle.load(file)
+        self.memory = pickle.load(file)
         file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
-        print(os.getcwd())
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
 
         pileupColumns = bamFile.pileup(
