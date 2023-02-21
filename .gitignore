@@ -1,6 +1,8 @@
 .venv/
 input/
 output/
+tmp/
+log/
 __pycache__/
 
 *.log
