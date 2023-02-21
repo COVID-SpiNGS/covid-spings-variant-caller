@@ -47,9 +47,11 @@ class VCServer:
                         ret = self._shutdown_gracefully(sock)
                     elif recv_data[0] == 'process' or recv_data[0] == 'write':
                         logging.info(f'Received {data[0]} with argument {data[1]}')
-                        if self.task_queue.length() < 5:
+                        if self.task_queue.length() < self.queue_size:
                             self.task_queue.put((recv_data[0], recv_data[1]))
-                        #TODO: ADD MAX QUEUE ERROR
+                        else:
+                            pass
+                            #TODO: ADD MAX QUEUE ERROR
 
                     else:
                         logging.error(f'No such action: {recv_data[0]}')
@@ -57,6 +59,8 @@ class VCServer:
 
                     while not self.task_queue.is_empty():
                         self.task_queue.process()
+                        self.task_queue.join()
+
 
     def _shutdown_gracefully(self, sock):
         try:

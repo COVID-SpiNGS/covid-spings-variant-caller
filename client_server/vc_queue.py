@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
 import settings.cio as cio
@@ -42,17 +43,19 @@ class VCQueue:
     def put(self, action: str):
         self.q.put(action)
         self.current_size += 1
+        #print(f'1 Queue size atm is {self.q.qsize()}')#
 
     def put(self, action: (str, str)):
         self.q.put(action)
         self.current_size += 1
+        #print(f' 2 Queue size atm is {self.q.qsize()}')
 
     def process(self):
         if not self.q.empty():
             (action, path) = self.q.get()
             logging.debug(f'Queue size atm is {self.q.qsize()}')
-            print(f'Queue size atm is {self.q.qsize()}')
-
+            #print(f'Queue size atm is {self.q.qsize()}')
+            time.sleep(10)
             if action == 'process':
                 self._process_bam(path)
 
@@ -60,6 +63,8 @@ class VCQueue:
                 self._write_vcf(path)
 
             self.current_size -= 1
+            self.q.task_done()
+            print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
 
     def _write_vcf(self, path: str):
         logging.info(f'Writing VCF to {path}')
@@ -69,11 +74,13 @@ class VCQueue:
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)
         checkpoint = os.path.join(self.temp_dir, basename + '.pkl')
-        if os.path.exists(checkpoint):
-            print(f'Checkpoint for {basename} found')
-            logging.debug(f'Checkpoint for {basename} found')
-            self.live_variant_caller.load_checkpoint(checkpoint)
-        if os.path.exists(basename):
+
+        if os.path.exists(path):
+            if os.path.exists(checkpoint):
+                print(f'Checkpoint for {basename} found')
+                logging.debug(f'Checkpoint for {basename} found')
+                self.live_variant_caller.load_checkpoint(checkpoint)
+
             print(f'running under: {path}')
             self.live_variant_caller.process_bam(path)
             self.live_variant_caller.create_checkpoint(checkpoint)
@@ -82,7 +89,11 @@ class VCQueue:
             print(f'{path} does not exist')
 
     def length(self) -> int:
+        logging.info(f'Queue size - {self.q.qsize()}')
         return self.q.qsize()
 
     def is_empty(self) -> bool:
         return self.q.empty()
+
+    def join(self):
+        self.q.join()
