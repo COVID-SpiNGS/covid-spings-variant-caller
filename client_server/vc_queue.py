@@ -21,12 +21,12 @@ logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
 
 class VCQueue:
     """
-
+    Wrapper class around multiprocessing.queue.Queue with additional business logic
     """
     def __init__(self, size: int):
         """
-
-        @param size:
+        Constructor for VCQueue
+        @param size: queue size (may not exceed 10)
         """
         if 10 >= size >= 1:
             self.size = size
@@ -49,20 +49,26 @@ class VCQueue:
 
     def put(self, action: str):
         """
-
-        @param action:
-        @return:
+        Add element to queue
+        @param action: action to be performed as string
         """
         self.q.put(action)
         self.current_size += 1
         #print(f'1 Queue size atm is {self.q.qsize()}')#
 
     def put(self, action: (str, str)):
+        """
+        Add tuple to queue
+        @param action:
+        """
         self.q.put(action)
         self.current_size += 1
         #print(f' 2 Queue size atm is {self.q.qsize()}')
 
     def process(self):
+        """
+
+        """
         if not self.q.empty():
             (action, path) = self.q.get()
             logging.debug(f'Queue size atm is {self.q.qsize()}')
@@ -80,9 +86,7 @@ class VCQueue:
 
     def _write_vcf(self, path: str):
         """
-
         @param path:
-        @return:
         """
         logging.info(f'Writing VCF to {path}')
         self.live_variant_caller.write_vcf(path)
@@ -91,7 +95,6 @@ class VCQueue:
         """
 
         @param path:
-        @return:
         """
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)
@@ -112,22 +115,21 @@ class VCQueue:
 
     def length(self) -> int:
         """
-
-        @return:
+        Wrapper function for present number of elements in queue
+        @return: number of current elements in queue
         """
         logging.info(f'Queue size - {self.q.qsize()}')
         return self.q.qsize()
 
     def is_empty(self) -> bool:
         """
-
-        @return:
+        Wrapper function to check whether queue is empty
+        @return: bool whether queue is empty
         """
         return self.q.empty()
 
     def join(self):
         """
-
-        @return:
+        Wrapper for queue.join() - wait until task is done
         """
         self.q.join()

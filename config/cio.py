@@ -24,6 +24,22 @@ def get_queue_size() -> int:
     return int(config['BASIC_PARAMS']['QUEUE_SIZE'])
 
 
+def get_min_queue_size() -> int:
+    """
+    Gets field from vc.config
+    @return: min queue size as int
+    """
+    return int(config['BASIC_PARAMS']['MIN_QUEUE_SIZE'])
+
+
+def get_max_queue_size() -> int:
+    """
+    Gets field from vc.config
+    @return: max queue size as int
+    """
+    return int(config['BASIC_PARAMS']['MAX_QUEUE_SIZE'])
+
+
 def get_temp_dir() -> str:
     """
     Gets field from vc.config

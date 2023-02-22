@@ -17,13 +17,13 @@ logging.basicConfig(filename=os.path.join(log_dir, 'watcher.log'),
 
 class Watcher:
     """
-
+    Class that handles watching a directory for changes
     """
 
     def __init__(self, directory):
         """
-
-        @param directory:
+        Constructor for Watcher class
+        @param directory: relative or absolute path to directory to be watched
         """
         self.directory = directory
         self.recursive = cio.get_watch_recursively()
@@ -34,8 +34,7 @@ class Watcher:
 
     def run(self):
         """
-
-        @return:
+        Function that runs file system watcher in selected directory
         """
         self.observer.schedule(
             self.handler, self.directory, recursive=self.recursive)
@@ -55,23 +54,21 @@ class Watcher:
 
 class SeqHandler(FileSystemEventHandler):
     """
-
+    Handler class for Watcher, containing logic for handling changes in file system
     """
 
     def __init__(self, client, supported_extensions):
         """
-
-        @param client:
-        @param supported_extensions:
+        Constructor for SeqHandler
+        @param client: instance of VCClient
+        @param supported_extensions: supported file extensions to be watched
         """
         self.client = client
         self.supported_extensions = supported_extensions
 
     def on_any_event(self, event):
         """
-
         @param event:
-        @return:
         """
         if not event.is_directory:
             if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
