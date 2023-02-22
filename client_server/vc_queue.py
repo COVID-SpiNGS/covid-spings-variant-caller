@@ -3,7 +3,7 @@ import os
 import time
 from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
-import settings.cio as cio
+import config.cio as cio
 from client_server.vc_exception import VCException
 from os.path import dirname, abspath
 
@@ -20,7 +20,14 @@ logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
 
 
 class VCQueue:
+    """
+
+    """
     def __init__(self, size: int):
+        """
+
+        @param size:
+        """
         if 10 >= size >= 1:
             self.size = size
             self.q = Queue(maxsize=self.size)
@@ -41,6 +48,11 @@ class VCQueue:
             raise VCException(size)
 
     def put(self, action: str):
+        """
+
+        @param action:
+        @return:
+        """
         self.q.put(action)
         self.current_size += 1
         #print(f'1 Queue size atm is {self.q.qsize()}')#
@@ -67,10 +79,20 @@ class VCQueue:
             print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
 
     def _write_vcf(self, path: str):
+        """
+
+        @param path:
+        @return:
+        """
         logging.info(f'Writing VCF to {path}')
         self.live_variant_caller.write_vcf(path)
 
     def _process_bam(self, path: str):
+        """
+
+        @param path:
+        @return:
+        """
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)
         checkpoint = os.path.join(self.temp_dir, basename + '.pkl')
@@ -89,11 +111,23 @@ class VCQueue:
             print(f'{path} does not exist')
 
     def length(self) -> int:
+        """
+
+        @return:
+        """
         logging.info(f'Queue size - {self.q.qsize()}')
         return self.q.qsize()
 
     def is_empty(self) -> bool:
+        """
+
+        @return:
+        """
         return self.q.empty()
 
     def join(self):
+        """
+
+        @return:
+        """
         self.q.join()

@@ -4,7 +4,7 @@ import time
 import threading
 import daemon
 import os
-import settings.cio as cio
+import config.cio as cio
 from client_server.vc_exception import VCException
 from os.path import dirname, abspath
 from client_server.vc_queue import VCQueue
@@ -18,8 +18,14 @@ logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
 
 
 class VCServer:
+    """
+
+    """
 
     def __init__(self):
+        """
+
+        """
         host, port = cio.get_address()
         self.host = host
         self.port = port
@@ -27,7 +33,9 @@ class VCServer:
         self.task_queue = VCQueue(self.queue_size)
 
     def run(self):
+        """
 
+        """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind((self.host, self.port))
             sock.listen()
@@ -63,6 +71,11 @@ class VCServer:
 
 
     def _shutdown_gracefully(self, sock):
+        """
+
+        @param sock:
+        @return:
+        """
         try:
             logging.info('Stopping server in 10 seconds...')
             print('Stopping server in 10 seconds...')

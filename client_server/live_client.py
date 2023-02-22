@@ -1,6 +1,6 @@
 import argparse
 import socket
-import settings.cio as cio
+import config.cio as cio
 import logging
 import os
 from pathlib import Path
@@ -16,12 +16,25 @@ parser = argparse.ArgumentParser()
 
 
 class VCClient:
-    def __init__(self, host, port):
+    """
 
+    """
+
+    def __init__(self, host, port):
+        """
+
+        @param host:
+        @param port:
+        """
         self.host = host
         self.port = port
 
     def talk_to_server(self, action: str, params: str):
+        """
+
+        @param action:
+        @param params:
+        """
         payload = bytes(action + ' ' + params, encoding='utf-8')
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -37,12 +50,22 @@ class VCClient:
 
 
 def _construct_cli():
+    """
+
+    """
     parser.add_argument('--process', help='run or stop', nargs='+')
     parser.add_argument('--write', help='run or stop', nargs='+')
     parser.add_argument('--stop', help='run or stop', nargs='?')
 
 
+
 def _params_is_valid(action: str, params: str) -> bool:
+    """
+
+    @param action:
+    @param params:
+    @return:
+    """
     valid = False
 
     if action.casefold() == 'process':
@@ -62,6 +85,9 @@ def _params_is_valid(action: str, params: str) -> bool:
 
 
 def _run():
+    """
+
+    """
     _construct_cli()
 
     args = parser.parse_args()

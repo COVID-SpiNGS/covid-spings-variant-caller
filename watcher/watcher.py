@@ -1,7 +1,7 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from client_server.live_client import VCClient
-import settings.cio as cio
+import config.cio as cio
 import logging
 import time
 import sys
@@ -16,8 +16,15 @@ logging.basicConfig(filename=os.path.join(log_dir, 'watcher.log'),
 
 
 class Watcher:
+    """
+
+    """
 
     def __init__(self, directory):
+        """
+
+        @param directory:
+        """
         self.directory = directory
         self.recursive = cio.get_watch_recursively()
         self.interval = cio.get_watcher_interval()
@@ -26,6 +33,10 @@ class Watcher:
         self.observer = Observer()
 
     def run(self):
+        """
+
+        @return:
+        """
         self.observer.schedule(
             self.handler, self.directory, recursive=self.recursive)
         self.observer.start()
@@ -43,12 +54,25 @@ class Watcher:
 
 
 class SeqHandler(FileSystemEventHandler):
+    """
+
+    """
 
     def __init__(self, client, supported_extensions):
+        """
+
+        @param client:
+        @param supported_extensions:
+        """
         self.client = client
         self.supported_extensions = supported_extensions
 
     def on_any_event(self, event):
+        """
+
+        @param event:
+        @return:
+        """
         if not event.is_directory:
             if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
                 if event.event_type == 'created' or event.event_type == 'modified':
