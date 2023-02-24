@@ -23,6 +23,7 @@ class VCQueue:
     """
     Wrapper class around multiprocessing.queue.Queue with additional business logic
     """
+
     def __init__(self, size: int):
         """
         Constructor for VCQueue
@@ -55,7 +56,6 @@ class VCQueue:
         self.q.put(action)
         self.current_size += 1
 
-
     def put(self, action: (str, str)):
         """
         Add action  to queue
@@ -64,17 +64,15 @@ class VCQueue:
         self.q.put(action)
         self.current_size += 1
         print(f'Added {action} to queue')
-        #print(f' 2 Queue size atm is {self.q.qsize()}')
+        # print(f' 2 Queue size atm is {self.q.qsize()}')
 
     def process(self):
         """
-
+        Implementation of behaviour when element is retrieved from queue
         """
         if not self.q.empty():
             (action, path) = self.q.get()
             logging.debug(f'Queue size atm is {self.q.qsize()}')
-            #print(f'Queue size atm is {self.q.qsize()}')
-            #time.sleep(10)
             print(f'Current action is: {action}')
             if action == 'process':
                 self._process_bam(path)
@@ -88,17 +86,18 @@ class VCQueue:
 
     def _write_vcf(self, path: str):
         """
-        @param path:
+        Function acting as wrapper for variant caller's function to write VCF report
+        @param path: path to vcf file
         """
-        vcf_path = path.split('.bam')[0] +'.vcf'
+        vcf_path = path.split('.bam')[0] + '.vcf'
         logging.info(f'Writing VCF to {vcf_path}')
         print(f'Writing VCF to {vcf_path}')
         self.live_variant_caller.write_vcf(vcf_path)
 
     def _process_bam(self, path: str):
         """
-
-        @param path:
+        Function acting as wrapper for variant caller's function to process BAM file
+        @param path: path to BAM file
         """
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)

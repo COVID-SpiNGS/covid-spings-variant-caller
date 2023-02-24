@@ -34,7 +34,7 @@ class VCServer:
 
     def run(self):
         """
-        Function that runs server on
+        Function that runs server on given host and port
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind((self.host, self.port))
@@ -59,7 +59,7 @@ class VCServer:
                             self.task_queue.put((recv_data[0], recv_data[1]))
                         else:
                             pass
-                            #TODO: ADD MAX QUEUE ERROR
+                            # TODO: ADD MAX QUEUE ERROR
 
                     else:
                         logging.error(f'No such action: {recv_data[0]}')
@@ -69,12 +69,10 @@ class VCServer:
                         self.task_queue.process()
                         self.task_queue.join()
 
-
     def _shutdown_gracefully(self, sock):
         """
-
-        @param sock:
-        @return:
+        Function that shuts down server socket upon corresponding message
+        @param sock: socket to be shutdown
         """
         try:
             logging.info('Stopping server in 10 seconds...')
