@@ -69,7 +69,8 @@ class SeqHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
         """
-        @param event:
+        Function to handle any file system event
+        @param event: Any file system event
         """
         if not event.is_directory:
             if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
