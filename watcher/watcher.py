@@ -65,6 +65,7 @@ class SeqHandler(FileSystemEventHandler):
         """
         self.client = client
         self.supported_extensions = supported_extensions
+        self.current_file_size = 0
 
     def on_any_event(self, event):
         """

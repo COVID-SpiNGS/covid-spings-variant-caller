@@ -51,6 +51,7 @@ class LiveVariantCaller:
 
         file = open(filename, 'rb')
         self.memory = pickle.load(file)
+        print(f'Memory: {self.memory}')
         file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):

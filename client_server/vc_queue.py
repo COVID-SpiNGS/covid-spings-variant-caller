@@ -28,7 +28,7 @@ class VCQueue:
         Constructor for VCQueue
         @param size: queue size (may not exceed 10)
         """
-        if 10 >= size >= 1:
+        if cio.get_max_queue_size() >= size >= cio.get_min_queue_size():
             self.size = size
             self.q = Queue(maxsize=self.size)
             self.current_size = 0
@@ -54,15 +54,16 @@ class VCQueue:
         """
         self.q.put(action)
         self.current_size += 1
-        #print(f'1 Queue size atm is {self.q.qsize()}')#
+
 
     def put(self, action: (str, str)):
         """
-        Add tuple to queue
-        @param action:
+        Add action  to queue
+        @param action: tuple (action, file path) to be added to queue
         """
         self.q.put(action)
         self.current_size += 1
+        print(f'Added {action} to queue')
         #print(f' 2 Queue size atm is {self.q.qsize()}')
 
     def process(self):
@@ -73,7 +74,8 @@ class VCQueue:
             (action, path) = self.q.get()
             logging.debug(f'Queue size atm is {self.q.qsize()}')
             #print(f'Queue size atm is {self.q.qsize()}')
-            time.sleep(10)
+            #time.sleep(10)
+            print(f'Current action is: {action}')
             if action == 'process':
                 self._process_bam(path)
 
@@ -88,8 +90,10 @@ class VCQueue:
         """
         @param path:
         """
-        logging.info(f'Writing VCF to {path}')
-        self.live_variant_caller.write_vcf(path)
+        vcf_path = path.split('.bam')[0] +'.vcf'
+        logging.info(f'Writing VCF to {vcf_path}')
+        print(f'Writing VCF to {vcf_path}')
+        self.live_variant_caller.write_vcf(vcf_path)
 
     def _process_bam(self, path: str):
         """
@@ -99,8 +103,9 @@ class VCQueue:
         logging.info(f'Processing BAM with path {path}')
         basename = os.path.basename(path)
         checkpoint = os.path.join(self.temp_dir, basename + '.pkl')
+        index_file = path + '.bai'
 
-        if os.path.exists(path):
+        if os.path.exists(path) and os.path.exists(index_file):
             if os.path.exists(checkpoint):
                 print(f'Checkpoint for {basename} found')
                 logging.debug(f'Checkpoint for {basename} found')
@@ -110,8 +115,8 @@ class VCQueue:
             self.live_variant_caller.process_bam(path)
             self.live_variant_caller.create_checkpoint(checkpoint)
         else:
-            logging.error(f'{path} does not exist')
-            print(f'{path} does not exist')
+            logging.error(f'{path} or {index_file} or do not exist')
+            print(f'{path} or {index_file} do not exist')
 
     def length(self) -> int:
         """
