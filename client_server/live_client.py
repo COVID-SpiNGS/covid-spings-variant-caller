@@ -17,25 +17,25 @@ parser = argparse.ArgumentParser()
 
 class VCClient:
     """
-
+    Class of Variant Caller client
     """
 
     def __init__(self, host, port):
         """
-
-        @param host:
-        @param port:
+        Constructor for client
+        @param host: host address
+        @param port: host port
         """
         self.host = host
         self.port = port
 
-    def talk_to_server(self, action: str, params: str):
+    def talk_to_server(self, action: str, path: str):
         """
-
-        @param action:
-        @param params:
+        Function to send corresponding message to server
+        @param action: action to be executed
+        @param path: path to file for action
         """
-        payload = bytes(action + ' ' + params, encoding='utf-8')
+        payload = bytes(action + ' ' + path, encoding='utf-8')
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 logging.info(f'Connecting to server under {self.host}:{self.port}...')
@@ -51,7 +51,7 @@ class VCClient:
 
 def _construct_cli():
     """
-
+    Function that creates command line interface
     """
     parser.add_argument('--process', help='run or stop', nargs='+')
     parser.add_argument('--write', help='run or stop', nargs='+')
@@ -59,26 +59,26 @@ def _construct_cli():
 
 
 
-def _params_is_valid(action: str, params: str) -> bool:
+def _params_is_valid(action: str, path: str) -> bool:
     """
-
-    @param action:
-    @param params:
-    @return:
+    Function that validates input form CLI
+    @param action: action to be executedd
+    @param path: path provided by CLI
+    @return: bool whether params are valid (path exists,...)
     """
     valid = False
 
     if action.casefold() == 'process':
-        if params.endswith('.bam') or params.endswith('.sam') and os.path.isfile(params):
+        if path.endswith('.bam') and os.path.isfile(path):
             valid = True
 
     if action.casefold() == 'write':
-        path = Path(params).parent.absolute()
-        if params.endswith('.vcf') and os.path.exists(path):
+        path = Path(path).parent.absolute()
+        if path.endswith('.vcf') and os.path.exists(path):
             valid = True
 
     if action.casefold() == 'stop':
-        if params == '':
+        if path == '':
             valid = True
 
     return valid
@@ -86,13 +86,13 @@ def _params_is_valid(action: str, params: str) -> bool:
 
 def _run():
     """
-
+    Function that runs client with params from CLI
     """
     _construct_cli()
 
     args = parser.parse_args()
     action = ''
-    params = ''
+    path = ''
 
     c = VCClient(*cio.get_address())
 
@@ -101,20 +101,20 @@ def _run():
 
     if args.process is not None:
         action = 'process'
-        params = args.process[0]
+        path = args.process[0]
 
     if args.write is not None:
         action = 'write'
-        params = args.write[0]
+        path = args.write[0]
 
-    logging.info(f'Selected action is {action} with {params}.')
+    logging.info(f'Selected action is {action} with {path}.')
 
     if action != '':
-        if _params_is_valid(action, params):
-            c.talk_to_server(action, params)
+        if _params_is_valid(action, path):
+            c.talk_to_server(action, path)
         else:
-            print(f'{params} is invalid... please make sure path exists.')
-            logging.error(f'{params} is invalid... please make sure path exists.')
+            print(f'{path} is invalid... please make sure path exists.')
+            logging.error(f'{path} is invalid... please make sure path exists.')
 
 
 if __name__ == '__main__':

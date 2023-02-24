@@ -19,12 +19,12 @@ logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
 
 class VCServer:
     """
-
+    Class of Variant Caller server
     """
 
     def __init__(self):
         """
-
+        Constructor for VC server
         """
         host, port = cio.get_address()
         self.host = host
@@ -34,7 +34,7 @@ class VCServer:
 
     def run(self):
         """
-
+        Function that runs server on
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind((self.host, self.port))
