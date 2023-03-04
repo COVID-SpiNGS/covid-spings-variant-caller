@@ -1,11 +1,13 @@
 import logging
 import os
-import time
+import threading
 from queue import Queue
 from variant_caller.live_variant_caller import LiveVariantCaller
-import config.cio as cio
+import config_util.cio as cio
 from client_server.vc_exception import VCException
 from os.path import dirname, abspath
+import pysam as pys
+import config_util.logging as log
 
 # try:
 # task_queue = VCQueue(queue_size)
@@ -17,6 +19,23 @@ log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
 logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
                     level=logging.DEBUG,
                     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+
+
+def _run_samtools(sam_file_path: str, abs_path: str, bam_file_name: str):
+    """
+    Function that runs samtools sort and index when .sam file changes are monitored
+    @param sam_file_path: path to sam file path to be processed
+    @param abs_path: absolute path to .sam file folder
+    @param: bam_file_name: .bam file name to be used for output (must be equal to .sam file as per convention)
+    """
+    # Based on command: (['samtools', 'sort', '-O', 'bam', '-o', 'sorted_test_seq.bam', 'test_seq.sam'])
+
+    try:
+        pys.sort('-O', 'bam', '-o', os.path.join(abs_path, bam_file_name), sam_file_path)
+        pys.index(os.path.join(abs_path, bam_file_name))#, os.path.join(abs_path, index_file))
+    except Exception as e:
+        log.print_and_log(e, log.ERROR)
+        return
 
 
 class VCQueue:
@@ -63,26 +82,33 @@ class VCQueue:
         """
         self.q.put(action)
         self.current_size += 1
-        print(f'Added {action} to queue')
-        # print(f' 2 Queue size atm is {self.q.qsize()}')
+        log.print_and_log(f'Added {action} to queue', log.DEBUG)
+        log.print_and_log(f' 2 Queue size atm is {self.q.qsize()}', log.DEBUG)
 
     def process(self):
         """
         Implementation of behaviour when element is retrieved from queue
         """
+
         if not self.q.empty():
             (action, path) = self.q.get()
-            logging.debug(f'Queue size atm is {self.q.qsize()}')
-            print(f'Current action is: {action}')
-            if action == 'process':
-                self._process_bam(path)
+            log.print_and_log(f'Queue size atm is {self.q.qsize()}', log.DEBUG)
+            log.print_and_log(f'Current action is: {action}', log.DEBUG)
 
-            elif action == 'write':
+            daemon = threading.Thread(name='daemon_vc', target=self._process_bam, args=(path, ))
+
+            #if action == 'process':
+                #self._process_bam(path)
+
+            if action == 'write':
+                daemon = threading.Thread(name='daemon_vc', target=self._write_vcf, args=(path, ))
                 self._write_vcf(path)
 
             self.current_size -= 1
-            self.q.task_done()
-            print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
+
+            daemon.daemon = True
+            daemon.start()
+            #print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
 
     def _write_vcf(self, path: str):
         """
@@ -90,39 +116,38 @@ class VCQueue:
         @param path: path to vcf file
         """
         vcf_path = path.split('.bam')[0] + '.vcf'
-        logging.info(f'Writing VCF to {vcf_path}')
-        print(f'Writing VCF to {vcf_path}')
+        log.print_and_log(f'Writing VCF to {vcf_path}', log.INFO)
         self.live_variant_caller.write_vcf(vcf_path)
 
-    def _process_bam(self, path: str):
+    def _process_bam(self, file_path: str):
         """
         Function acting as wrapper for variant caller's function to process BAM file
         @param path: path to BAM file
         """
-        logging.info(f'Processing BAM with path {path}')
-        basename = os.path.basename(path)
-        checkpoint = os.path.join(self.temp_dir, basename + '.pkl')
-        index_file = path + '.bai'
+        logging.info(f'Processing BAM with path {file_path}')
+        abs_path = os.path.dirname(file_path)
+        file_name = os.path.basename(file_path)
+        if file_name.endswith('.sam'):
+            file_name = file_name.split('.sam')[0] + '.bam'
+            _run_samtools(file_path, abs_path, file_name)
+        checkpoint = os.path.join(self.temp_dir, file_name + '.pkl')
+        index_file = file_name + '.bai'
 
-        if os.path.exists(path) and os.path.exists(index_file):
+        if os.path.exists(file_path) and os.path.exists(os.path.join(abs_path, index_file)):
             if os.path.exists(checkpoint):
-                print(f'Checkpoint for {basename} found')
-                logging.debug(f'Checkpoint for {basename} found')
+                log.print_and_log(f'Checkpoint for {file_name} found', log.DEBUG)
                 self.live_variant_caller.load_checkpoint(checkpoint)
 
-            print(f'running under: {path}')
-            self.live_variant_caller.process_bam(path)
+            self.live_variant_caller.process_bam(os.path.join(abs_path, file_name))
             self.live_variant_caller.create_checkpoint(checkpoint)
         else:
-            logging.error(f'{path} or {index_file} or do not exist')
-            print(f'{path} or {index_file} do not exist')
+            log.print_and_log(f'{file_name} or {index_file} or do not exist', log.ERROR)
 
     def length(self) -> int:
         """
         Wrapper function for present number of elements in queue
         @return: number of current elements in queue
         """
-        logging.info(f'Queue size - {self.q.qsize()}')
         return self.q.qsize()
 
     def is_empty(self) -> bool:

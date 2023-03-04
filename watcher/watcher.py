@@ -1,12 +1,13 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from client_server.live_client import VCClient
-import config.cio as cio
+import config_util.cio as cio
 import logging
 import time
 import sys
 import os
 from os.path import dirname, abspath
+import config_util.logging as log
 
 log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
 
@@ -39,8 +40,7 @@ class Watcher:
         self.observer.schedule(
             self.handler, self.directory, recursive=self.recursive)
         self.observer.start()
-        logging.info(f'Watcher running in {self.directory}')
-        print(f'Now watching directory {self.directory}')
+        log.print_and_log(f'Now watching directory {self.directory}', log.INFO)
         try:
             while True:
                 time.sleep(self.interval)
@@ -48,8 +48,7 @@ class Watcher:
         except:
             self.observer.stop()
         self.observer.join()
-        print('Watcher terminated.')
-        logging.info('Watcher terminated.')
+        log.print_and_log('Watcher terminated.', log.INFO)
 
 
 class SeqHandler(FileSystemEventHandler):
@@ -75,24 +74,11 @@ class SeqHandler(FileSystemEventHandler):
         if not event.is_directory:
             if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
                 if event.event_type == 'created' or event.event_type == 'modified':
-                    logging.info(f'Event detector: {event.event_type} in {event.src_path}')
-                    print(f'Event detector: {event.event_type} in {event.src_path}')
+                    log.print_and_log(f'Event detector: {event.event_type} in {event.src_path}', log.INFO)
                     file = event.src_path
                     # stop, process, write
                     self.client.talk_to_server('process', file)
-                    self.client.talk_to_server('write', file)
-
-    def on_modified(self, event):
-        pass
-
-    def on_deleted(self, event):
-        pass
-
-    def on_created(self, event):
-        pass
-
-    def on_moved(self, event):
-        pass
+                    # self.client.talk_to_server('write', file)
 
 
 if __name__ == '__main__':
@@ -102,14 +88,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 0:
         path = sys.argv[1]
     else:
-        logging.error(f'No path provided')
-        print(f'Please provide path to be watched!')
+        log.print_and_log(f'No path provided', log.ERROR)
 
     if os.path.exists(path) and not os.path.isfile(path):
-        logging.info(f'Provided path: {path}')
-        print(f'Provided path: {path}')
+        log.print_and_log(f'Provided path: {path}', log.INFO)
         w = Watcher(path)
         w.run()
     else:
-        logging.error(f'Path {path} does not exist or is a file.')
-        print(f'The provided path - {path} - does not exist or is a file. Path must be a directory!')
+        log.print_and_log(f'Provided path {path} does not exist or is a file.', log.ERROR)

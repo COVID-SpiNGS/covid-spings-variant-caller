@@ -1,4 +1,4 @@
-import config.cio as cio
+import config_util.cio as cio
 
 
 class VCException(Exception):

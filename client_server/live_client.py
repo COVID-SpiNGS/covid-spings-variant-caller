@@ -1,10 +1,11 @@
 import argparse
 import socket
-import config.cio as cio
+import config_util.cio as cio
 import logging
 import os
 from pathlib import Path
 from os.path import dirname, abspath
+import config_util.logging as log
 
 log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
 
@@ -42,20 +43,18 @@ class VCClient:
                 sock.connect((self.host, self.port))
                 sock.sendall(payload)
                 sock.close()
-                logging.info(f'Closing connection to server under {self.host}:{self.port}...')
-                print(f'Closing connection to server under {self.host}:{self.port}...')
-        except ConnectionRefusedError:
-            logging.error(f'Not able to connect to {self.host}:{self.port}. Is server running?')
-            print(f'Not able to connect to {self.host}:{self.port}. Is server running?')
+                log.print_and_log(f'Closing connection to server under {self.host}:{self.port}...', log.INFO)
 
+        except ConnectionRefusedError:
+            log.print_and_log(f'Not able to connect to {self.host}:{self.port}. Is server running?', log.ERROR)
 
 def _construct_cli():
     """
     Function that creates command line interface
     """
-    parser.add_argument('--process', help='run or stop', nargs='+')
-    parser.add_argument('--write', help='run or stop', nargs='+')
-    parser.add_argument('--stop', help='run or stop', nargs='?')
+    parser.add_argument('-p', '--process', help='run or stop', nargs='+')
+    parser.add_argument('-w', '--write', help='run or stop', nargs='+')
+    parser.add_argument('-st', '--stop', help='run or stop', action='store_true')
 
 
 
@@ -113,8 +112,7 @@ def _run():
         if _params_is_valid(action, path):
             c.talk_to_server(action, path)
         else:
-            print(f'{path} is invalid... please make sure path exists.')
-            logging.error(f'{path} is invalid... please make sure path exists.')
+            log.print_and_log(f'{path} is invalid... please make sure path exists.', log.ERROR)
 
 
 if __name__ == '__main__':

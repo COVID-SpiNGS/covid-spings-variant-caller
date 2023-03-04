@@ -4,8 +4,6 @@ import pickle
 import math
 from typing import List
 
-import os
-
 import pysam
 import numpy as np
 
@@ -13,9 +11,11 @@ from tqdm import tqdm
 from pysam import AlignedSegment
 from time import strftime, localtime
 
+import logging
+import config_util.logging as log
+
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
-
 
 
 class LiveVariantCaller:
@@ -38,25 +38,21 @@ class LiveVariantCaller:
         self.memory: dict[int, Site] = {}
 
     def create_checkpoint(self, filename):
-        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
-        print(f'{timestamp} Creating checkpoint {filename}')
+        log.print_and_log(f'Creating checkpoint {filename}', log.INFO)
 
         file = open(filename, 'wb')
         pickle.dump(self.memory, file)
         file.close()
 
     def load_checkpoint(self, filename):
-        timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
-        print(f'{timestamp} Loading checkpoint {filename}')
+        log.print_and_log(f'Loading checkpoint {filename}', log.INFO)
 
         file = open(filename, 'rb')
         self.memory = pickle.load(file)
-        print(f'Memory: {self.memory}')
         file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
-
         pileupColumns = bamFile.pileup(
             min_mapping_quality=self.minMappingQuality,
             min_base_quality=self.minBaseQuality,

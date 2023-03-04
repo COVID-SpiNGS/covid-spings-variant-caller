@@ -1,7 +1,7 @@
-pysam==0.19.1
-numpy==1.23.0
-tqdm==4.64.1
+pysam
+numpy
+tqdm
 python-daemon
-matplotlib==3.6.1
+matplotlib
 watchdog
 pyinstaller
