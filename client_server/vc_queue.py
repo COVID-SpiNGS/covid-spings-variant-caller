@@ -32,7 +32,7 @@ def _run_samtools(sam_file_path: str, abs_path: str, bam_file_name: str):
 
     try:
         pys.sort('-O', 'bam', '-o', os.path.join(abs_path, bam_file_name), sam_file_path)
-        pys.index(os.path.join(abs_path, bam_file_name))#, os.path.join(abs_path, index_file))
+        pys.index(os.path.join(abs_path, bam_file_name), os.path.join(abs_path, bam_file_name + '.bai'))
     except Exception as e:
         log.print_and_log(e, log.ERROR)
         return
@@ -129,7 +129,7 @@ class VCQueue:
         file_name = os.path.basename(file_path)
         if file_name.endswith('.sam'):
             file_name = file_name.split('.sam')[0] + '.bam'
-            _run_samtools(file_path, abs_path, file_name)
+        _run_samtools(file_path, abs_path, file_name)
         checkpoint = os.path.join(self.temp_dir, file_name + '.pkl')
         index_file = file_name + '.bai'
 
