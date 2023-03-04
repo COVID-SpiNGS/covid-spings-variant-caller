@@ -63,7 +63,7 @@ def get_reference() -> str:
     Gets field from vc.config_util
     @return: path to FASTA-reference file
     """
-    return config['VARIANT_CALLER_PARAMS']['reference']
+    return config['VARIANT_CALLER_PARAMS']['REFERENCE']
 
 
 def get_min_evidence_depth() -> int:
@@ -71,7 +71,7 @@ def get_min_evidence_depth() -> int:
     Gets field from vc.config_util
     @return: minimal evidence depth as int
     """
-    return int(config['VARIANT_CALLER_PARAMS']['minEvidenceDepth'])
+    return int(config['VARIANT_CALLER_PARAMS']['MIN_EVIDENCE_DEPTH'])
 
 
 def get_min_evidence_ratio() -> float:
@@ -79,7 +79,7 @@ def get_min_evidence_ratio() -> float:
     Gets field from vc.config_util
     @return: minimal evidence ration as int
     """
-    return float(config['VARIANT_CALLER_PARAMS']['minEvidenceRatio'])
+    return float(config['VARIANT_CALLER_PARAMS']['MIN_EVIDENCE_RATIO'])
 
 
 def get_max_variants() -> int:
@@ -87,7 +87,7 @@ def get_max_variants() -> int:
     Gets field from vc.config_util
     @return: max. count of variants as int
     """
-    return int(config['VARIANT_CALLER_PARAMS']['maxVariants'])
+    return int(config['VARIANT_CALLER_PARAMS']['MAX_VARIANTS'])
 
 
 def get_min_total_depth() -> int:
@@ -95,7 +95,7 @@ def get_min_total_depth() -> int:
     Gets field from vc.config_util
     @return: minimal total depth as int
     """
-    return int(config['VARIANT_CALLER_PARAMS']['minTotalDepth'])
+    return int(config['VARIANT_CALLER_PARAMS']['MIN_TOTAL_DEPTH'])
 
 
 def get_min_mapping_quality() -> int:
@@ -103,7 +103,7 @@ def get_min_mapping_quality() -> int:
     Gets field from vc.config_util
     @return:
     """
-    return int(config['VARIANT_CALLER_PARAMS']['minMappingQuality'])
+    return int(config['VARIANT_CALLER_PARAMS']['MIN_MAPPING_QUALITY'])
 
 
 def get_min_base_quality() -> int:
@@ -111,7 +111,7 @@ def get_min_base_quality() -> int:
     Gets field from vc.config_util
     @return: minimal base quality as int
     """
-    return int(config['VARIANT_CALLER_PARAMS']['minBaseQuality'])
+    return int(config['VARIANT_CALLER_PARAMS']['MIN_BASE_QUALITY'])
 
 
 # Watcher Params
