@@ -231,6 +231,7 @@ class LiveVariantCaller:
         return variants
 
     def write_vcf(self, outputVfc: str):
+        print("VFC output", outputVfc)
         vcfHeader = pysam.VariantHeader()
 
         vcfHeader.add_meta('INFO', items=[

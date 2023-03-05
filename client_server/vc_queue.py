@@ -62,6 +62,7 @@ class VCQueue:
                 cio.get_max_variants()
             )
             self.temp_dir = cio.get_temp_dir()
+            self.output_dir = cio.get_output_dir()
             logging.info(f'Init queue with size {size}')
         else:
             logging.error(f'Wrong queue size: {size} - Queue size must be in range of (1, 10)!')
@@ -82,8 +83,8 @@ class VCQueue:
         """
         self.q.put(action)
         self.current_size += 1
-        log.print_and_log(f'Added {action} to queue', log.DEBUG)
-        log.print_and_log(f' 2 Queue size atm is {self.q.qsize()}', log.DEBUG)
+        log.print_and_log(f'Added {action} to queue', log.INFO)
+        log.print_and_log(f'Current queue size: {self.q.qsize()}', log.INFO)
 
     def process(self):
         """
@@ -127,11 +128,11 @@ class VCQueue:
         logging.info(f'Processing BAM with path {file_path}')
         abs_path = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
-        if file_name.endswith('.sam'):
-            file_name = file_name.split('.sam')[0] + '.bam'
+        if file_name.endswith(cio.SAM):
+            file_name = file_name.split(cio.SAM)[0] + cio.BAM
         _run_samtools(file_path, abs_path, file_name)
-        checkpoint = os.path.join(self.temp_dir, file_name + '.pkl')
-        index_file = file_name + '.bai'
+        checkpoint = os.path.join(self.temp_dir, file_name + cio.get_temp_file_extension())
+        index_file = file_name + cio.BAI
 
         if os.path.exists(file_path) and os.path.exists(os.path.join(abs_path, index_file)):
             if os.path.exists(checkpoint):
@@ -140,6 +141,7 @@ class VCQueue:
 
             self.live_variant_caller.process_bam(os.path.join(abs_path, file_name))
             self.live_variant_caller.create_checkpoint(checkpoint)
+            self.live_variant_caller.write_vcf(os.path.join(self.output_dir, file_name + cio.VCF))
         else:
             log.print_and_log(f'{file_name} or {index_file} or do not exist', log.ERROR)
 

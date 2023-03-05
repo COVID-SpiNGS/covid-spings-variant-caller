@@ -6,6 +6,11 @@ path_current_directory = os.path.dirname(__file__)
 path_config_file = os.path.join(path_current_directory, 'vc.config')
 config.read(path_config_file)
 
+BAM = '.bam'
+BAI = '.bai'
+SAM = '.sam'
+VCF = '.vcf'
+
 
 # Basic params
 def get_address() -> (str, int):
@@ -38,6 +43,14 @@ def get_max_queue_size() -> int:
     @return: max queue size as int
     """
     return int(config['BASIC_PARAMS']['MAX_QUEUE_SIZE'])
+
+
+def get_output_dir() -> str:
+    """
+    Gets field from vc.config_util
+    @return: path for any output produced by application
+    """
+    return config['BASIC_PARAMS']['OUTPUT_DIR']
 
 
 def get_temp_dir() -> str:
