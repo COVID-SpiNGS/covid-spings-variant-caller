@@ -4,6 +4,7 @@ output/
 tmp/
 log/
 __pycache__/
+test/testdata
 
 *.log
 *.pkl
