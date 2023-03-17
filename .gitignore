@@ -10,3 +10,4 @@ __pycache__/
 *.bam.pkl
 *.bam
 *.bai
+*.sam
