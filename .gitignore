@@ -11,3 +11,4 @@ __pycache__/
 *.bam
 *.bai
 *.sam
+run_full.sh
