@@ -4,5 +4,8 @@ mkdir -p ./log
 mkdir -p ./tmp
 mkdir -p ./output
 
-python -m client_server.live_server
-python -m watcher.watcher /your/path/here/test
+echo "$PWD"
+./run_server.sh &
+#python3 -m client_server.live_server
+./run_watcher.sh "$1" &
+#python3 -m watcher.watcher /home/vickylara/Documents/test

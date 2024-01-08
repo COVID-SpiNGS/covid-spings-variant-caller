@@ -39,7 +39,7 @@ class LiveVariantCaller:
 
     def create_checkpoint(self, filename):
         log.print_and_log(f'Creating checkpoint {filename}', log.INFO)
-
+        print('SELF.MEMORY', type(self.memory))
         file = open(filename, 'wb')
         pickle.dump(self.memory, file)
         file.close()

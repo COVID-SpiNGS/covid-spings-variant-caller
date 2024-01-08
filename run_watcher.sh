@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python -m watcher.watcher "[your path here]"
+python3 -m watcher.watcher "$1"
