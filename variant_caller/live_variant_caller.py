@@ -17,6 +17,7 @@ import config_util.logging as log
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
+from constants import *
 
 class LiveVariantCaller:
     def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int,
@@ -115,7 +116,7 @@ class LiveVariantCaller:
             if pileup.is_refskip:
                 self.memory[position]['indels'][indel].append(pileup.alignment.query_qualities[pileup.query_position])
             else:
-                self.memory[position]['indels'][indel].append(None)
+                self.memory[position]['indels'][inde/].append(None)
 
     def prepare_variants(self):
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
