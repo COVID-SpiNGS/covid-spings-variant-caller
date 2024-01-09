@@ -17,7 +17,7 @@ import config_util.logging as log
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
-from constants import *
+import constants as c
 
 class LiveVariantCaller:
     def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int,
@@ -38,19 +38,6 @@ class LiveVariantCaller:
     def reset_memory(self):
         self.memory: dict[int, Site] = {}
 
-    def create_checkpoint(self, filename):
-        log.print_and_log(f'Creating checkpoint {filename}', log.INFO)
-        print('SELF.MEMORY', type(self.memory))
-        file = open(filename, 'wb')
-        pickle.dump(self.memory, file)
-        file.close()
-
-    def load_checkpoint(self, filename):
-        log.print_and_log(f'Loading checkpoint {filename}', log.INFO)
-
-        file = open(filename, 'rb')
-        self.memory = pickle.load(file)
-        file.close()
 
     def process_bam(self, inputBam: str, referenceIndex=0):
         bamFile = pysam.AlignmentFile(inputBam, 'rb')
@@ -169,19 +156,19 @@ class LiveVariantCaller:
                         qual = np.mean(snvs[allele])
 
                         variants.append({
-                            'start': position,
-                            'stop': position + 1,
-                            'alleles': (
+                            c.VCF_START: position,
+                            c.VCF_STOP: position + 1,
+                            c.VCF_ALLELES: (
                                 self.memory[position]['reference'],
                                 allele
                             ),
-                            'qual': qual,
-                            'info': {
-                                'DP': self.memory[position]['totalDepth'],
-                                'AD': alleleDepth,
-                                'GL': gl,
-                                'PL': pl,
-                                'SCORE': score
+                            c.VCF_QUAL: qual,
+                            c.VCF_INFO: {
+                                c.VCF_DP: self.memory[position]['totalDepth'],
+                                c.VCF_AD: alleleDepth,
+                                c.VCF_GL: gl,
+                                c.VCF_PL: pl,
+                                c.VCF_SCORE: score
                             }
                         })
 
@@ -196,112 +183,47 @@ class LiveVariantCaller:
                     if all(filterConstrains):
                         if indel == '-':
                             variants.append({
-                                'start': position,
-                                'stop': position + 1,
-                                'alleles': (
+                                c.VCF_START: position,
+                                c.VCF_STOP: position + 1,
+                                c.VCF_ALLELES: (
                                     self.memory[position]['reference'],
                                     '*'
                                 ),
-                                'qual': 0,
-                                'info': {
-                                    'DP': self.memory[position]['totalDepth'],
-                                    'AD': alleleDepth,
-                                    'GL': 0,
-                                    'PL': 0,
-                                    'SCORE': 0
+                                c.VCF_QUAL: 0,
+                                c.VCF_INFO: {
+                                    c.VCF_DP: self.memory[position]['totalDepth'],
+                                    c.VCF_AD: alleleDepth,
+                                    c.VCF_GL: 0,
+                                    c.VCF_PL: 0,
+                                    c.VCF_SCORE: 0
                                 }
                             })
                         else:
                             variants.append({
-                                'start': position,
-                                'stop': position + 1,
-                                'alleles': (
+                                c.VCF_START: position,
+                                c.VCF_STOP: position + 1,
+                                c.VCF_ALLELES: (
                                     '*',
                                     indel[1:]
                                 ),
-                                'qual': 0,
-                                'info': {
-                                    'DP': self.memory[position]['totalDepth'],
-                                    'ED': alleleDepth,
-                                    'GL': 0,
-                                    'PL': 0,
-                                    'SCORE': 0
+                                c.VCF_QUAL: 0,
+                                c.VCF_INFO: {
+                                    c.VCF_DP: self.memory[position]['totalDepth'],
+                                    c.VCF_ED: alleleDepth,
+                                    c.VCF_GL: 0,
+                                    c.VCF_PL: 0,
+                                    c.VCF_SCORE: 0
                                 }
                             })
 
         return variants
 
-    def write_vcf(self, outputVfc: str):
-        print("VFC output", outputVfc)
-        vcfHeader = pysam.VariantHeader()
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'DP'),
-            ('Number', 1),
-            ('Type', 'Integer'),
-            ('Description', 'Total Depth')
-        ])
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'AD'),
-            ('Number', 1),
-            ('Type', 'Integer'),
-            ('Description', 'Allele Depth')
-        ])
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'GL'),
-            ('Number', 1),
-            ('Type', 'Float'),
-            ('Description',
-             'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
-        ])
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'PL'),
-            ('Number', 1),
-            ('Type', 'Integer'),
-            ('Description',
-             'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
-        ])
-
-        vcfHeader.add_meta('INFO', items=[
-            ('ID', 'SCORE'),
-            ('Number', 1),
-            ('Type', 'Float'),
-            ('Description', 'Custom scoring function')
-        ])
-
-        for reference in self.fastaFile.references:
-            vcfHeader.contigs.add(
-                reference,
-                self.fastaFile.get_reference_length(reference)
-            )
-
-        vcfFile = pysam.VariantFile(outputVfc, mode='w', header=vcfHeader)
-
-        variants = self.prepare_variants()
-        # gvariants = self.concat_deletions(variants)
-
-        for index, variant in enumerate(
-                sorted(variants, key=lambda variant: (variant['start'], variant['info']['SCORE']))):
-            vcfFile.write(
-                vcfFile.new_record(
-                    start=variant['start'],
-                    stop=variant['stop'],
-                    alleles=variant['alleles'],
-                    qual=variant['qual'],
-                    info=variant['info'],
-                )
-            )
-
-        vcfFile.close()
 
     def prev_variant(self, variants: List[Variant], variant: Variant):
         return next(
             (
                 v for v in variants
-                if v['start'] == variant['start'] - 1
+                if v[c.VCF_START] == variant[c.VCF_START] - 1
             ),
             None
         )
@@ -310,7 +232,7 @@ class LiveVariantCaller:
         return next(
             (
                 v for v in variants
-                if v['start'] == variant['start'] + 1
+                if v[c.VCF_START] == variant[c.VCF_START] + 1
             ),
             None
         )
@@ -320,7 +242,7 @@ class LiveVariantCaller:
         currentVariant: Variant = None
 
         for variant in variants:
-            if variant['alleles'][1] == '*':
+            if variant[c.VCF_ALLELES][1] == '*':
                 nextVariant = self.next_variant(variants, variant)
 
                 if nextVariant:
@@ -328,14 +250,14 @@ class LiveVariantCaller:
                         currentVariant = variant
                     else:
                         currentVariant = {
-                            'start': currentVariant['start'],
-                            'stop': variant['stop'],
-                            'alleles': (
+                            c.VCF_START: currentVariant[c.VCF_START],
+                            c.VCF_STOP: variant[c.VCF_STOP],
+                            c.VCF_ALLELES: (
                                 f'{currentVariant["alleles"][0]}{variant["alleles"][0]}',
                                 '*'
                             ),
-                            'qual': variant['qual'],  # must be combined
-                            'info': variant['info']  # must be combined
+                            c.VCF_QUAL: variant[c.VCF_QUAL],  # must be combined
+                            c.VCF_INFO: variant[c.VCF_INFO]  # must be combined
 
                         }
                 else:
