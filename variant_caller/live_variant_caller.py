@@ -19,63 +19,65 @@ from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
 import vcf_file_constants as c
 
+import file_util as fu
+
 class LiveVariantCaller:
-    def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int,
-                 minAlleleDepth: int, minEvidenceRatio: float, maxVariants: int):
-        self.minBaseQuality = minBaseQuality
-        self.minMappingQuality = minMappingQuality
-        self.minTotalDepth = minTotalDepth
-        self.minAlleleDepth = minAlleleDepth
-        self.minEvidenceRatio = minEvidenceRatio
+    def __init__(self, reference_fasta: str, min_base_quality: int, min_mapping_quality: int, min_total_depth: int,
+                 min_allele_depth: int, min_evidence_ratio: float, maxVariants: int):
+        self.min_base_quality = min_base_quality
+        self.min_mapping_quality = min_mapping_quality
+        self.min_total_depth = min_total_depth
+        self.min_allele_depth = min_allele_depth
+        self.min_evidence_ratio = min_evidence_ratio
         self.maxVariants = maxVariants
-        self.fastaFile = pysam.FastaFile(referenceFasta)
+        self.fasta_file = pysam.FastaFile(reference_fasta)
         self.memory = {}
         self.reset_memory()
 
     def __del__(self):
-        self.fastaFile.close()
+        self.fasta_file.close()
 
     def reset_memory(self):
         self.memory: dict[int, Site] = {}
 
 
-    def process_bam(self, inputBam: str, referenceIndex=0):
-        bamFile = pysam.AlignmentFile(inputBam, 'rb')
-        pileupColumns = bamFile.pileup(
-            min_mapping_quality=self.minMappingQuality,
-            min_base_quality=self.minBaseQuality,
-            reference=self.fastaFile.references[referenceIndex]
+    def process_bam(self, inputBam: str, reference_index=0):
+        bam_file = pysam.AlignmentFile(input_bam, 'rb')
+        pileup_columns =  bam_file.pileup(
+            min_mapping_quality=self.min_mapping_quality,
+            min_base_quality=self.min_base_quality,
+            reference=self.fasta_file.references[reference_index]
         )
 
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
-        progressBar = tqdm(
-            pileupColumns,
-            desc=f'{timestamp} Processing {inputBam}',
-            total=bamFile.get_reference_length(self.fastaFile.references[referenceIndex])
+        progress_bar = tqdm(
+            pileup_columns,
+            desc=f'{timestamp} Processing {input_bam}',
+            total= bam_file.get_reference_length(self.fasta_file.references[reference_index])
         )
 
-        for pileupColumn in progressBar:
-            self.process_pileup_column(pileupColumn)
+        for pileup_column in progress_bar:
+            self.process_pileup_column(pileup_column)
 
-        bamFile.close()
+        bam_file.close()
 
-    def process_pileup_column(self, pileupColumn: AlignedSegment):
-        totalDepth = len(pileupColumn.pileups)
+    def process_pileup_column(self, pileup_column: AlignedSegment):
+        total_depth = len(pileup_column.pileups)
 
-        if pileupColumn.reference_pos not in self.memory:
-            reference = self.fastaFile.fetch(reference=pileupColumn.reference_name)
+        if pileup_column.reference_pos not in self.memory:
+            reference = self.fasta_file.fetch(reference=pileup_column.reference_name)
 
-            self.memory[pileupColumn.reference_pos] = {
-                c.VCF_REFERENCE: reference[pileupColumn.reference_pos],
-                c.VCF_TOTAL_DEPTH_KEY: totalDepth,
+            self.memory[pileup_column.reference_pos] = {
+                c.VCF_REFERENCE: reference[pileup_column.reference_pos],
+                c.VCF_TOTAL_DEPTH_KEY: total_depth,
                 c.VCF_SNVS: {},
                 c.VCF_INDELS: {}
             }
         else:
-            self.memory[pileupColumn.reference_pos][c.VCF_TOTAL_DEPTH_KEY] += totalDepth
+            self.memory[pileup_column.reference_pos][c.VCF_TOTAL_DEPTH_KEY] += total_depth
 
-        for pileup in pileupColumn.pileups:
-            self.process_pileup_at_position(pileupColumn.reference_pos, pileup)
+        for pileup in pileup_column.pileups:
+            self.process_pileup_at_position(pileup_column.reference_pos, pileup)
 
     def process_pileup_at_position(self, position: int, pileup):
         self.process_snv(position, pileup)
@@ -103,11 +105,11 @@ class LiveVariantCaller:
             if pileup.is_refskip:
                 self.memory[position][c.VCF_INDELS][indel].append(pileup.alignment.query_qualities[pileup.query_position])
             else:
-                self.memory[position][c.VCF_INDELS][inde/].append(None)
+                self.memory[position][c.VCF_INDELS][indel].append(None)
 
     def prepare_variants(self):
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
-        progressBar = tqdm(
+        progress_bar = tqdm(
             self.memory,
             desc=f'{timestamp} Calculating statistics',
             total=len(self.memory.keys())
@@ -115,8 +117,8 @@ class LiveVariantCaller:
 
         variants: List[Variant] = []
 
-        for position in progressBar:
-            if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minTotalDepth:
+        for position in progress_bar:
+            if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_total_depth:
                 snvs = {
                     allele: [
                         from_phred_scale(quality)
@@ -125,25 +127,25 @@ class LiveVariantCaller:
                     for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
 
-                genotypeLikelihoods = {
+                genotype_likelihoods = {
                     allele: genotype_likelihood(allele, snvs)
                     for allele in snvs.keys()
                 }
 
-                sumGenotypeLikelihoods = functools.reduce(operator.add, genotypeLikelihoods.values(), 0.0)
-                sumGenotypeLikelihoods = sumGenotypeLikelihoods if sumGenotypeLikelihoods != 0 else 1.0
+                sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
+                sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
                 for allele in snvs.keys():
-                    alleleDepth = len(snvs[allele])
+                    allele_depth = len(snvs[allele])
 
-                    filterConstrains = [
+                    filter_constrains = [
                         self.memory[position][c.VCF_REFERENCE] != allele,
-                        alleleDepth >= self.minAlleleDepth,
-                        alleleDepth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minEvidenceRatio
+                        allele_depth >= self.min_allele_depth,
+                        allele_depth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_evidence_ratio
                     ]
 
-                    if all(filterConstrains):
-                        genotypeLikelihood = genotypeLikelihoods[allele]
+                    if all(filter_constrains):
+                        genotypeLikelihood = genotype_likelihoods[allele]
 
                         if genotypeLikelihood != 0:
                             gl = math.log10(genotypeLikelihood)
@@ -152,7 +154,7 @@ class LiveVariantCaller:
                             gl = 0
                             pl = 0
 
-                        score = to_phred_scale(1.0 - (genotypeLikelihoods[allele] / sumGenotypeLikelihoods))
+                        score = to_phred_scale(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
                         qual = np.mean(snvs[allele])
 
                         variants.append({
@@ -165,7 +167,7 @@ class LiveVariantCaller:
                             c.VCF_QUAL: qual,
                             c.VCF_INFO: {
                                 c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
-                                c.VCF_AD: alleleDepth,
+                                c.VCF_AD: allele_depth,
                                 c.VCF_GL: gl,
                                 c.VCF_PL: pl,
                                 c.VCF_SCORE: score
@@ -173,14 +175,14 @@ class LiveVariantCaller:
                         })
 
                 for indel in self.memory[position][c.VCF_INDELS].keys():
-                    alleleDepth = len(self.memory[position][c.VCF_INDELS][indel])
+                    allele_depth = len(self.memory[position][c.VCF_INDELS][indel])
 
-                    filterConstrains = [
-                        alleleDepth >= self.minAlleleDepth,
-                        alleleDepth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minEvidenceRatio
+                    filter_constrains = [
+                        allele_depth >= self.min_allele_depth,
+                        allele_depth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_evidence_ratio
                     ]
 
-                    if all(filterConstrains):
+                    if all(filter_constrains):
                         if indel == '-':
                             variants.append({
                                 c.VCF_START: position,
@@ -192,7 +194,7 @@ class LiveVariantCaller:
                                 c.VCF_QUAL: 0,
                                 c.VCF_INFO: {
                                     c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
-                                    c.VCF_AD: alleleDepth,
+                                    c.VCF_AD: allele_depth,
                                     c.VCF_GL: 0,
                                     c.VCF_PL: 0,
                                     c.VCF_SCORE: 0
@@ -209,7 +211,7 @@ class LiveVariantCaller:
                                 c.VCF_QUAL: 0,
                                 c.VCF_INFO: {
                                     c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
-                                    c.VCF_ED: alleleDepth,
+                                    c.VCF_ED: allele_depth,
                                     c.VCF_GL: 0,
                                     c.VCF_PL: 0,
                                     c.VCF_SCORE: 0
@@ -238,22 +240,22 @@ class LiveVariantCaller:
         )
 
     def concat_deletions(self, variants: List[Variant]):
-        concatinatedVariants: List[Variant] = []
-        currentVariant: Variant = None
+        concatinated_variants: List[Variant] = []
+        current_variant: Variant = None
 
         for variant in variants:
             if variant[c.VCF_ALLELES][1] == '*':
-                nextVariant = self.next_variant(variants, variant)
+                next_variant = self.next_variant(variants, variant)
 
-                if nextVariant:
-                    if not currentVariant:
-                        currentVariant = variant
+                if next_variant:
+                    if not current_variant:
+                        current_variant = variant
                     else:
-                        currentVariant = {
-                            c.VCF_START: currentVariant[c.VCF_START],
+                        current_variant = {
+                            c.VCF_START: current_variant[c.VCF_START],
                             c.VCF_STOP: variant[c.VCF_STOP],
                             c.VCF_ALLELES: (
-                                f'{currentVariant[c.VCF_ALLELES][0]}{variant[c.VCF_ALLELES][0]}',
+                                f'{current_variant[c.VCF_ALLELES][0]}{variant[c.VCF_ALLELES][0]}',
                                 '*'
                             ),
                             c.VCF_QUAL: variant[c.VCF_QUAL],  # must be combined
@@ -261,15 +263,15 @@ class LiveVariantCaller:
 
                         }
                 else:
-                    if currentVariant:
-                        concatinatedVariants.append(currentVariant)
-                        currentVariant = None
+                    if current_variant:
+                        concatinated_variants.append(current_variant)
+                        current_variant = None
 
 
             else:
-                concatinatedVariants.append(variant)
+                concatinated_variants.append(variant)
 
-        return concatinatedVariants
+        return concatinated_variants
 
     def concat_insertions(self, variants: List[Variant]):
         return variants
