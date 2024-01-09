@@ -3,39 +3,39 @@ def write_vcf(self, outputVfc: str):
         vcfHeader = pysam.VariantHeader()
 
         vcfHeader.add_meta(c.VCF_INFO, items=[
-            (c.VCF_ID, 'DP'),
-            ('Number', 1),
-            ('Type', 'Integer'),
-            (c.VCF_DESCRIPTION, 'Total Depth')
+            (c.VCF_ID, c.VCF_DP),
+            (c.VCF_NUMBER, 1),
+            (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
+            (c.VCF_DESCRIPTION, c.VCF_TOTAL_DEPTH_STR)
         ])
 
         vcfHeader.add_meta(c.VCF_INFO, items=[
-            (c.VCF_ID, 'AD'),
-            ('Number', 1),
-            ('Type', 'Integer'),
-            (c.VCF_DESCRIPTION, 'Allele Depth')
+            (c.VCF_ID, c.VCF_AD),
+            (c.VCF_NUMBER, 1),
+            (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
+            (c.VCF_DESCRIPTION, c.VCF_ALLELE_DEPTH)
         ])
 
         vcfHeader.add_meta(c.VCF_INFO, items=[
-            (c.VCF_ID, 'GL'),
-            ('Number', 1),
-            ('Type', 'Float'),
+            (c.VCF_ID, c.VCF_GL),
+            (c.VCF_NUMBER, 1),
+            (c.VCF_TYPE, c.VCF_TYPE_FLOAT),
             (c.VCF_DESCRIPTION,
              'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
         ])
 
         vcfHeader.add_meta(c.VCF_INFO, items=[
-            (c.VCF_ID, 'PL'),
-            ('Number', 1),
-            ('Type', 'Integer'),
+            (c.VCF_ID, c.VCF_PL),
+            (c.VCF_NUMBER, 1),
+            (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
             (c.VCF_DESCRIPTION,
              'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
         ])
 
         vcfHeader.add_meta(c.VCF_INFO, items=[
-            (c.VCF_ID, 'SCORE'),
-            ('Number', 1),
-            ('Type', 'Float'),
+            (c.VCF_ID, c.VCF_SCORE),
+            (c.VCF_NUMBER, 1),
+            (c.VCF_TYPE, c.VCF_TYPE_FLOAT),
             (c.VCF_DESCRIPTION, 'Custom scoring function')
         ])
 
@@ -51,7 +51,7 @@ def write_vcf(self, outputVfc: str):
         # gvariants = self.concat_deletions(variants)
 
         for index, variant in enumerate(
-                sorted(variants, key=lambda variant: (variant[c.VCF_START], variant[c.VCF_INFO]['SCORE']))):
+                sorted(variants, key=lambda variant: (variant[c.VCF_START], variant[c.VCF_INFO][c.VCF_SCORE]))):
             vcfFile.write(
                 vcfFile.new_record(
                     start=variant[c.VCF_START],

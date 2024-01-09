@@ -17,7 +17,7 @@ import config_util.logging as log
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
 
-import constants as c
+import vcf_file_constants as c
 
 class LiveVariantCaller:
     def __init__(self, referenceFasta: str, minBaseQuality: int, minMappingQuality: int, minTotalDepth: int,
@@ -66,44 +66,44 @@ class LiveVariantCaller:
             reference = self.fastaFile.fetch(reference=pileupColumn.reference_name)
 
             self.memory[pileupColumn.reference_pos] = {
-                'reference': reference[pileupColumn.reference_pos],
-                'totalDepth': totalDepth,
-                'snvs': {},
-                'indels': {}
+                c.VCF_REFERENCE: reference[pileupColumn.reference_pos],
+                c.VCF_TOTAL_DEPTH_KEY: totalDepth,
+                c.VCF_SNVS: {},
+                c.VCF_INDELS: {}
             }
         else:
-            self.memory[pileupColumn.reference_pos]['totalDepth'] += totalDepth
+            self.memory[pileupColumn.reference_pos][c.VCF_TOTAL_DEPTH_KEY] += totalDepth
 
         for pileup in pileupColumn.pileups:
             self.process_pileup_at_position(pileupColumn.reference_pos, pileup)
 
     def process_pileup_at_position(self, position: int, pileup):
-        self.process_svn(position, pileup)
+        self.process_snv(position, pileup)
         # self.process_indel(position, pileup)
 
-    def process_svn(self, position, pileup):
+    def process_snv(self, position, pileup):
         if not pileup.is_del and not pileup.is_refskip:
-            svn = pileup.alignment.query_sequence[pileup.query_position]
+            snv = pileup.alignment.query_sequence[pileup.query_position]
 
-            if svn not in self.memory[position]['snvs'].keys():
-                self.memory[position]['snvs'][svn] = []
+            if snv not in self.memory[position][c.VCF_SNVS].keys():
+                self.memory[position][c.VCF_SNVS][snv] = []
 
-            self.memory[position]['snvs'][svn].append(pileup.alignment.query_qualities[pileup.query_position])
+            self.memory[position][c.VCF_SNVS][snv].append(pileup.alignment.query_qualities[pileup.query_position])
 
     def process_indel(self, position, pileup):
         if pileup.is_del or pileup.is_refskip:
             indel = '-' if pileup.is_del else f'+{pileup.alignment.query_sequence[pileup.query_position]}'
 
-            if indel not in self.memory[position]['indels'].keys():
+            if indel not in self.memory[position][c.VCF_INDELS].keys():
                 # We could store more information here in the memory. But as the Base Qualty is the the only information that matters for further calculation we 
                 # save memory and only store them
 
-                self.memory[position]['indels'][indel] = []
+                self.memory[position][c.VCF_INDELS][indel] = []
 
             if pileup.is_refskip:
-                self.memory[position]['indels'][indel].append(pileup.alignment.query_qualities[pileup.query_position])
+                self.memory[position][c.VCF_INDELS][indel].append(pileup.alignment.query_qualities[pileup.query_position])
             else:
-                self.memory[position]['indels'][inde/].append(None)
+                self.memory[position][c.VCF_INDELS][inde/].append(None)
 
     def prepare_variants(self):
         timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
@@ -116,13 +116,13 @@ class LiveVariantCaller:
         variants: List[Variant] = []
 
         for position in progressBar:
-            if self.memory[position]['totalDepth'] >= self.minTotalDepth:
+            if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minTotalDepth:
                 snvs = {
                     allele: [
                         from_phred_scale(quality)
-                        for quality in self.memory[position]['snvs'][allele]
+                        for quality in self.memory[position][c.VCF_SNVS][allele]
                     ]
-                    for allele in self.memory[position]['snvs'].keys()
+                    for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
 
                 genotypeLikelihoods = {
@@ -137,9 +137,9 @@ class LiveVariantCaller:
                     alleleDepth = len(snvs[allele])
 
                     filterConstrains = [
-                        self.memory[position]['reference'] != allele,
+                        self.memory[position][c.VCF_REFERENCE] != allele,
                         alleleDepth >= self.minAlleleDepth,
-                        alleleDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                        alleleDepth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minEvidenceRatio
                     ]
 
                     if all(filterConstrains):
@@ -159,12 +159,12 @@ class LiveVariantCaller:
                             c.VCF_START: position,
                             c.VCF_STOP: position + 1,
                             c.VCF_ALLELES: (
-                                self.memory[position]['reference'],
+                                self.memory[position][c.VCF_REFERENCE],
                                 allele
                             ),
                             c.VCF_QUAL: qual,
                             c.VCF_INFO: {
-                                c.VCF_DP: self.memory[position]['totalDepth'],
+                                c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
                                 c.VCF_AD: alleleDepth,
                                 c.VCF_GL: gl,
                                 c.VCF_PL: pl,
@@ -172,12 +172,12 @@ class LiveVariantCaller:
                             }
                         })
 
-                for indel in self.memory[position]['indels'].keys():
-                    alleleDepth = len(self.memory[position]['indels'][indel])
+                for indel in self.memory[position][c.VCF_INDELS].keys():
+                    alleleDepth = len(self.memory[position][c.VCF_INDELS][indel])
 
                     filterConstrains = [
                         alleleDepth >= self.minAlleleDepth,
-                        alleleDepth / self.memory[position]['totalDepth'] >= self.minEvidenceRatio
+                        alleleDepth / self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.minEvidenceRatio
                     ]
 
                     if all(filterConstrains):
@@ -186,12 +186,12 @@ class LiveVariantCaller:
                                 c.VCF_START: position,
                                 c.VCF_STOP: position + 1,
                                 c.VCF_ALLELES: (
-                                    self.memory[position]['reference'],
+                                    self.memory[position][c.VCF_REFERENCE],
                                     '*'
                                 ),
                                 c.VCF_QUAL: 0,
                                 c.VCF_INFO: {
-                                    c.VCF_DP: self.memory[position]['totalDepth'],
+                                    c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
                                     c.VCF_AD: alleleDepth,
                                     c.VCF_GL: 0,
                                     c.VCF_PL: 0,
@@ -208,7 +208,7 @@ class LiveVariantCaller:
                                 ),
                                 c.VCF_QUAL: 0,
                                 c.VCF_INFO: {
-                                    c.VCF_DP: self.memory[position]['totalDepth'],
+                                    c.VCF_DP: self.memory[position][c.VCF_TOTAL_DEPTH_KEY],
                                     c.VCF_ED: alleleDepth,
                                     c.VCF_GL: 0,
                                     c.VCF_PL: 0,
@@ -253,7 +253,7 @@ class LiveVariantCaller:
                             c.VCF_START: currentVariant[c.VCF_START],
                             c.VCF_STOP: variant[c.VCF_STOP],
                             c.VCF_ALLELES: (
-                                f'{currentVariant["alleles"][0]}{variant["alleles"][0]}',
+                                f'{currentVariant[c.VCF_ALLELES][0]}{variant[c.VCF_ALLELES][0]}',
                                 '*'
                             ),
                             c.VCF_QUAL: variant[c.VCF_QUAL],  # must be combined
