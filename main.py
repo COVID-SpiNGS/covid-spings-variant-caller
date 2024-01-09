@@ -1,4 +1,4 @@
-from variant_caller.live_variant_caller import LiveVariantCaller
+from variant_caller.live_variant_caller import live_variant_caller
 from os.path import getsize
 
 import time
@@ -7,66 +7,66 @@ import time
 def main():
     # start = time.time()
 
-    minEvidenceDepth = 5
-    minEvidenceRatio = 0.0
-    maxVariants = 1
-    minTotalDepth = 10
-    minMappingQuality = 20
-    minBaseQuality = 30
+    min_evidence_depth = 5
+    min_evidence_ratio = 0.0
+    max_variants = 1
+    min_total_depth = 10
+    min_mapping_quality = 20
+    min_base_quality = 30
 
-    liveVariantCaller = LiveVariantCaller(
+    live_variant_caller = live_variant_caller(
         'input/reference-covid.fasta',
-        minBaseQuality,
-        minMappingQuality,
-        minTotalDepth,
-        minEvidenceDepth,
-        minEvidenceRatio,
-        maxVariants
+        min_base_quality,
+        min_mapping_quality,
+        min_total_depth,
+        min_evidence_depth,
+        min_evidence_ratio,
+        max_variants
     )
 
     start = time.time()
     file = 'input/input-10/input.bam'
-    liveVariantCaller.process_bam(file)
+    live_variant_caller.process_bam(file)
     print('Filesize', getsize(file))
     print('Time', time.time() - start)
-    # liveVariantCaller.process_bam('input/input.bam')
+    # live_variant_caller.process_bam('input/input.bam')
     #
     # 
-    # liveVariantCaller.process_bam('input/real/input_001.bam')
+    # live_variant_caller.process_bam('input/real/input_001.bam')
     # print('1', time.time() - start)
     # 
     # 
-    # liveVariantCaller.process_bam('input/real/input_002.bam')
+    # live_variant_caller.process_bam('input/real/input_002.bam')
     # print('2', time.time() - start)
     # 
     # 
-    # liveVariantCaller.process_bam('input/real/input_003.bam')
+    # live_variant_caller.process_bam('input/real/input_003.bam')
     # print('3', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_004.bam')
+    # live_variant_caller.process_bam('input/real/input_004.bam')
     # print('4', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_005.bam')
+    # live_variant_caller.process_bam('input/real/input_005.bam')
     # print('5', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_006.bam')
+    # live_variant_caller.process_bam('input/real/input_006.bam')
     # print('6', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_007.bam')
+    # live_variant_caller.process_bam('input/real/input_007.bam')
     # print('7', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_008.bam')
+    # live_variant_caller.process_bam('input/real/input_008.bam')
     # print('8', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_009.bam')
+    # live_variant_caller.process_bam('input/real/input_009.bam')
     # print('9', time.time() - start)
     # 
-    # liveVariantCaller.process_bam('input/real/input_010.bam')
+    # live_variant_caller.process_bam('input/real/input_010.bam')
     # print('10', time.time() - start)
     # 
     # 
-    # liveVariantCaller.write_vcf('output/live_multi_variant_caller.vcf')
-    # # liveVariantCaller.create_checkpoint('output/checkpoint.pkl')
+    # live_variant_caller.write_vcf('output/live_multi_variant_caller.vcf')
+    # # live_variant_caller.create_checkpoint('output/checkpoint.pkl')
     #
     # print('total', time.time() - start)
 
