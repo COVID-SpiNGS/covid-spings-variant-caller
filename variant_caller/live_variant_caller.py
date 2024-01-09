@@ -15,7 +15,7 @@ import logging
 import config_util.logging as log
 
 from .structs import Site, Variant
-from .utils import genotype_likelihood, from_phred_scale, to_phred_scale
+from .utils import genotype_likelihood, from_phred_score, to_phred_score
 
 import vcf_file_constants as c
 
@@ -23,13 +23,13 @@ import file_util as fu
 
 class LiveVariantCaller:
     def __init__(self, reference_fasta: str, min_base_quality: int, min_mapping_quality: int, min_total_depth: int,
-                 min_allele_depth: int, min_evidence_ratio: float, maxVariants: int):
+                 min_allele_depth: int, min_evidence_ratio: float, max_variants: int):
         self.min_base_quality = min_base_quality
         self.min_mapping_quality = min_mapping_quality
         self.min_total_depth = min_total_depth
         self.min_allele_depth = min_allele_depth
         self.min_evidence_ratio = min_evidence_ratio
-        self.maxVariants = maxVariants
+        self.max_variants = max_variants
         self.fasta_file = pysam.FastaFile(reference_fasta)
         self.memory = {}
         self.reset_memory()
@@ -121,7 +121,7 @@ class LiveVariantCaller:
             if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_total_depth:
                 snvs = {
                     allele: [
-                        from_phred_scale(quality)
+                        from_phred_score(quality)
                         for quality in self.memory[position][c.VCF_SNVS][allele]
                     ]
                     for allele in self.memory[position][c.VCF_SNVS].keys()
@@ -154,7 +154,8 @@ class LiveVariantCaller:
                             gl = 0
                             pl = 0
 
-                        score = to_phred_scale(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
+                        # MAGIC HAPPENS HERE 
+                        score = to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
                         qual = np.mean(snvs[allele])
 
                         variants.append({
