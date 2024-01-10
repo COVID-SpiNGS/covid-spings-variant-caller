@@ -1,5 +1,12 @@
-# covid-spings-variant-caller
+# Live Variant Caller
 
+## Installation
+1. Clone repo and enter directory
+2. Install required dependencies with ´´´pipenv install -r requirements.txt´´´
+
+
+
+## Notizen
 
 POS = Position in der Referenz Sequenz
 REF = Base in der Referenz Sequenz (bisher noch nicht rausgefunden wie ich die bekomme)
