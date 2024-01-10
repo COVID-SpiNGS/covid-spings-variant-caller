@@ -2,7 +2,7 @@
 
 ## Installation
 1. Clone repo and enter directory
-2. Install required dependencies with ´´´pipenv install -r requirements.txt´´´
+2. Install required dependencies with ```pipenv install -r requirements.txt```
 
 
 
