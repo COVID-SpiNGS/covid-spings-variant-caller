@@ -17,9 +17,8 @@ import config_util.logging as log
 from .structs import Site, Variant
 from .utils import genotype_likelihood, from_phred_score, to_phred_score
 
-import vcf_file_constants as c
-
-import file_util as fu
+from . import vcf_file_constants as c
+from . import file_util as fu
 
 class LiveVariantCaller:
     def __init__(self, reference_fasta: str, min_base_quality: int, min_mapping_quality: int, min_total_depth: int,
@@ -41,7 +40,7 @@ class LiveVariantCaller:
         self.memory: dict[int, Site] = {}
 
 
-    def process_bam(self, inputBam: str, reference_index=0):
+    def process_bam(self, input_bam: str, reference_index=0):
         bam_file = pysam.AlignmentFile(input_bam, 'rb')
         pileup_columns =  bam_file.pileup(
             min_mapping_quality=self.min_mapping_quality,
