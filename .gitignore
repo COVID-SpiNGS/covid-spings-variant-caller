@@ -11,4 +11,5 @@ __pycache__/
 *.bam
 *.bai
 *.sam
+Pipfile.lock
 run_full.sh
