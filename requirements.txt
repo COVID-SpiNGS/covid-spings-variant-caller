@@ -1,8 +1,0 @@
-pysam
-numpy
-tqdm
-python-daemon
-matplotlib
-watchdog
-pyinstaller
-pytest
