@@ -44,9 +44,4 @@ def get_likelihood(read):
     likelihood[index_dict[base]] = 1-prob
     return likelihood
 
-dist = init_prior()
 
-for read in single_site_results:
-    dist = update_dist(dist, get_likelihood(read))
-    print(dist)
-    print(-np.log(dist)/np.log(10))
