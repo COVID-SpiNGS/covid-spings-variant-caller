@@ -24,6 +24,29 @@ def genotype_likelihood(hypothesis: str, alleles: Dict[str, List[float]]):
     return hypothesis_value * non_hypothesis_value
 
 
+## Christians code
 
+def compressed_version(results):
+    num = np.prod(list(map(get_likelihood,results)),axis=0)
+    return num/np.sum(num)
 
+def init_prior():
+    return np.array([0.25,0.25,0.25,0.25])
 
+def update_dist(prior,likelihood):
+    posterior = prior*likelihood/np.sum(prior*likelihood)
+    return posterior
+
+def get_likelihood(read):
+    base,score = read
+    prob = 10**(-score)
+    likelihood = np.ones((4,))*prob/3 
+    likelihood[index_dict[base]] = 1-prob
+    return likelihood
+
+dist = init_prior()
+
+for read in single_site_results:
+    dist = update_dist(dist, get_likelihood(read))
+    print(dist)
+    print(-np.log(dist)/np.log(10))
