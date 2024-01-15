@@ -65,7 +65,7 @@ def main():
     # print('10', time.time() - start)
     # 
     # 
-    # live_variant_caller.write_vcf('output/live_multi_variant_caller.vcf')
+    live_variant_caller.write_vcf('output/live_multi_variant_caller.vcf')
     # # live_variant_caller.create_checkpoint('output/checkpoint.pkl')
     #
     # print('total', time.time() - start)

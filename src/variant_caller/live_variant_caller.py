@@ -10,7 +10,7 @@ from tqdm import tqdm
 from pysam import AlignedSegment
 from time import strftime, localtime
 
-import config_util.logging as log
+
 
 from .structs import Site, Variant
 import utils as u
