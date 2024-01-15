@@ -1,7 +1,7 @@
 # VCF File Constants
 VCF_ALLELES = 'alleles'
 VCF_DESCRIPTION = 'Description'
-VCF_INFO = 'info'
+VCF_INFO = 'INFO'
 VCF_INDELS = 'indels'
 VCF_QUAL = 'qual'
 VCF_START = 'start'
