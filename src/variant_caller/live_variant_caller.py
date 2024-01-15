@@ -1,6 +1,5 @@
 import functools
 import operator
-import pickle
 import math
 from typing import List
 
@@ -11,11 +10,11 @@ from tqdm import tqdm
 from pysam import AlignedSegment
 from time import strftime, localtime
 
-import logging
 import config_util.logging as log
 
 from .structs import Site, Variant
-from .utils import genotype_likelihood, from_phred_score, to_phred_score
+import utils as u
+#from .utils import genotype_likelihood, from_phred_score, to_phred_score
 
 from . import vcf_file_constants as c
 from . import file_util as fu
@@ -120,7 +119,7 @@ class LiveVariantCaller:
             if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_total_depth:
                 snvs = {
                     allele: [
-                        from_phred_score(quality)
+                        u.from_phred_score(quality)
                         for quality in self.memory[position][c.VCF_SNVS][allele]
                     ]
                     for allele in self.memory[position][c.VCF_SNVS].keys()
@@ -154,7 +153,7 @@ class LiveVariantCaller:
                             pl = 0
 
                         # MAGIC HAPPENS HERE 
-                        score = to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
+                        score = u.to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
                         qual = np.mean(snvs[allele])
 
                         variants.append({

@@ -1,4 +1,9 @@
-def write_vcf(self, outputVfc: str):
+import pysam
+from . import vcf_file_constants as c
+import pickle
+import config_util.logging as log
+
+def write_vcf(self, output_vcf: str):
         print("VCF output", output_vcf)
         vcf_header = pysam.VariantHeader()
 
