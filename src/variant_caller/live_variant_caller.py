@@ -130,6 +130,8 @@ class LiveVariantCaller:
                     for allele in snvs.keys()
                 }
 
+                print('GENOTYPE LIKELIHOODS', genotype_likelihoods)
+
                 sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
                 sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
