@@ -2,7 +2,7 @@ import logging
 import os
 import threading
 from queue import Queue
-from variant_caller.live_variant_caller import LiveVariantCaller
+from live_variant_caller import LiveVariantCaller
 import config_util.cio as cio
 from client_server.vc_exception import VCException
 from os.path import dirname, abspath

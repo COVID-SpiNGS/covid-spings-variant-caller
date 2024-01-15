@@ -10,14 +10,10 @@ from tqdm import tqdm
 from pysam import AlignedSegment
 from time import strftime, localtime
 
-
-
-from .structs import Site, Variant
-import utils as u
-#from .utils import genotype_likelihood, from_phred_score, to_phred_score
-
-from . import vcf_file_constants as c
-from . import file_util as fu
+from variant_caller.models import Site, Variant
+import variant_caller.utils as u
+import variant_caller.vcf_file_constants as c
+import file_util as fu
 
 class LiveVariantCaller:
     def __init__(self, reference_fasta: str, min_base_quality: int, min_mapping_quality: int, min_total_depth: int,
@@ -276,3 +272,70 @@ class LiveVariantCaller:
 
     def concat_insertions(self, variants: List[Variant]):
         return variants
+    
+    def write_vcf(self, output_vcf: str):
+            print("VCF output", output_vcf)
+            vcf_header = pysam.VariantHeader()
+    
+            vcf_header.add_meta(c.VCF_INFO, items=[
+                (c.VCF_ID, c.VCF_DP),
+                (c.VCF_NUMBER, 1),
+                (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
+                (c.VCF_DESCRIPTION, c.VCF_TOTAL_DEPTH_STR)
+            ])
+    
+            vcf_header.add_meta(c.VCF_INFO, items=[
+                (c.VCF_ID, c.VCF_AD),
+                (c.VCF_NUMBER, 1),
+                (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
+                (c.VCF_DESCRIPTION, c.VCF_ALLELE_DEPTH)
+            ])
+    
+            vcf_header.add_meta(c.VCF_INFO, items=[
+                (c.VCF_ID, c.VCF_GL),
+                (c.VCF_NUMBER, 1),
+                (c.VCF_TYPE, c.VCF_TYPE_FLOAT),
+                (c.VCF_DESCRIPTION,
+                 'Genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible genotypes given the set of alleles defined in the REF and ALT fields')
+            ])
+    
+            vcf_header.add_meta(c.VCF_INFO, items=[
+                (c.VCF_ID, c.VCF_PL),
+                (c.VCF_NUMBER, 1),
+                (c.VCF_TYPE, c.VCF_TYPE_INTEGER),
+                (c.VCF_DESCRIPTION,
+                 'The phred-scaled genotype likelihoods rounded to the closest integer (and otherwise defined precisely as the GL field)')
+            ])
+    
+            vcf_header.add_meta(c.VCF_INFO, items=[
+                (c.VCF_ID, c.VCF_SCORE),
+                (c.VCF_NUMBER, 1),
+                (c.VCF_TYPE, c.VCF_TYPE_FLOAT),
+                (c.VCF_DESCRIPTION, 'Custom scoring function')
+            ])
+    
+            for reference in self.fasta_file.references:
+                vcf_header.contigs.add(
+                    reference,
+                    self.fasta_file.get_reference_length(reference)
+                )
+    
+            vcf_file = pysam.VariantFile(output_vcf, mode='w', header=vcf_header)
+    
+            variants = self.prepare_variants()
+            # gvariants = self.concat_deletions(variants)
+    
+            for index, variant in enumerate(
+                    sorted(variants, key=lambda variant: (variant[c.VCF_START], variant[c.VCF_INFO][c.VCF_SCORE]))):
+                vcf_file.write(
+                    vcf_file.new_record(
+                        start=variant[c.VCF_START],
+                        stop=variant[c.VCF_STOP],
+                        alleles=variant[c.VCF_ALLELES],
+                        qual=variant[c.VCF_QUAL],
+                        info=variant[c.VCF_INFO],
+                    )
+                )
+    
+            vcf_file.close()
+    

@@ -1,7 +1,7 @@
-import pysam
-from . import vcf_file_constants as c
+import pysam 
+import variant_caller.vcf_file_constants as c
 import pickle
-import config_util.logging as log
+from config_util import logging as log
 
 def write_vcf(self, output_vcf: str):
         print("VCF output", output_vcf)

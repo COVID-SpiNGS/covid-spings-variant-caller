@@ -5,7 +5,6 @@ class Site(TypedDict):
     snvs: Dict[str, List[int]]
     indels: Dict[str, List[int]]
 
-
 class Variant(TypedDict):
     start: int
     stop: int
