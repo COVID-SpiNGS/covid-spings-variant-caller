@@ -25,7 +25,7 @@ def main():
     )
 
     start = time.time()
-    file = 'input/input-10/input.bam'
+    file = 'input/input.bam'
     live_variant_caller.process_bam(file)
     print('Filesize', getsize(file))
     print('Time', time.time() - start)
