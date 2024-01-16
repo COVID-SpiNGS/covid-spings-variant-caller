@@ -13,8 +13,10 @@ def to_phred_score(probability: float, threshold: int = 99) -> int:
     return min(round(-10 * math.log10(probability)), threshold) if probability > 0.0 else threshold
 
 
-def genotype_likelihood(hypothesis: str, alleles: Dict[str, List[float]]): 
+def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]): 
+    #print("GENOTYPE FUNC", hypothesis, alleles.keys(), '\n')
     hypothesis_value = (1.0 - np.array(alleles[hypothesis])).prod()
+    print('Hypothesis value')
     non_hypothesis_value = functools.reduce(operator.mul, {
         allele: np.array(alleles[allele]).prod()
         for allele in alleles
@@ -29,9 +31,6 @@ def genotype_likelihood(hypothesis: str, alleles: Dict[str, List[float]]):
 def compressed_version(results):
     num = np.prod(list(map(get_likelihood,results)),axis=0)
     return num/np.sum(num)
-
-def init_prior():
-    return np.array([0.25,0.25,0.25,0.25])
 
 def update_dist(prior,likelihood):
     posterior = prior*likelihood/np.sum(prior*likelihood)

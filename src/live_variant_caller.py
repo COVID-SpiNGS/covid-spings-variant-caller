@@ -120,16 +120,21 @@ class LiveVariantCaller:
                     ]
                     for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
+                snvs_tuples = [(key, value) for key in snvs for value in snvs[key]]
 
-                print ("SNVs", snvs)
+            
+                # MAGIC HAPPENS HERE 
                 genotype_likelihoods = {
-                    allele: u.genotype_likelihood(allele, snvs)
-                    for allele in snvs.keys()
+                allele: u.get_likelihood((allele, value))
+                for (allele, value) in snvs_tuples
                 }
+                
+                print(genotype_likelihoods)
 
-                #print('GENOTYPE LIKELIHOODS', genotype_likelihoods)
+                #print((self.memory[3940]), '\n')
 
-                sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
+                sum_genotype_likelihoods = 23 #functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
+                print('SUM GENOTYPE', sum_genotype_likelihoods)
                 sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
                 for allele in snvs.keys():
@@ -151,7 +156,7 @@ class LiveVariantCaller:
                             gl = 0
                             pl = 0
 
-                        # MAGIC HAPPENS HERE 
+                        # MAGIC HAPPENS HERE TOO I GUESS ?
                         score = u.to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
                         qual = np.mean(snvs[allele])
 
@@ -326,6 +331,8 @@ class LiveVariantCaller:
             variants = self.prepare_variants()
             # gvariants = self.concat_deletions(variants)
     
+            
+
             for index, variant in enumerate(
                     sorted(variants, key=lambda variant: (variant[c.VCF_START], variant[c.VCF_INFO][c.VCF_SCORE]))):
                 vcf_file.write(
