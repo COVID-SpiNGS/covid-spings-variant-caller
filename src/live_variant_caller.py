@@ -122,6 +122,8 @@ class LiveVariantCaller:
                 }
                 snvs_tuples = [(key, value) for key in snvs for value in snvs[key]]
             
+                dist = np.full(len(snvs_tuples), 0.25) # 0.25 because we assume same prob for all bases?
+
                 # MAGIC HAPPENS HERE 
                 genotype_likelihoods = {
                 allele: u.get_likelihood((allele, value))
