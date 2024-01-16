@@ -37,7 +37,7 @@ def update_dist(prior,likelihood):
     return posterior
 
 def get_likelihood(read):
-    print(read)
+    
     index_dict = {'A':0 , 'G': 1, 'C':2, 'T': 3}
     base,score = read
     prob = 10**(-score)
