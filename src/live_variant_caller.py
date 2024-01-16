@@ -121,7 +121,6 @@ class LiveVariantCaller:
                     for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
                 snvs_tuples = [(key, value) for key in snvs for value in snvs[key]]
-
             
                 # MAGIC HAPPENS HERE 
                 genotype_likelihoods = {
@@ -129,12 +128,12 @@ class LiveVariantCaller:
                 for (allele, value) in snvs_tuples
                 }
                 
-                print(genotype_likelihoods)
+                #print(genotype_likelihoods)
 
                 #print((self.memory[3940]), '\n')
 
                 sum_genotype_likelihoods = 23 #functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
-                print('SUM GENOTYPE', sum_genotype_likelihoods)
+                #print('SUM GENOTYPE', sum_genotype_likelihoods)
                 sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
                 for allele in snvs.keys():
