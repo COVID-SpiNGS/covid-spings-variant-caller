@@ -115,27 +115,48 @@ class LiveVariantCaller:
             if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_total_depth:
                 snvs = {
                     allele: [
-                        u.from_phred_score(quality)
+                        u.from_phred_score(quality)[1]
                         for quality in self.memory[position][c.VCF_SNVS][allele]
                     ]
                     for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
-                snvs_tuples = [(key, value) for key in snvs for value in snvs[key]]
-            
-                dist = np.full(len(snvs_tuples), 0.25) # 0.25 because we assume same prob for all bases?
 
-                print(len(dist))
+                snvs2 = {
+                    allele: [
+                        u.from_phred_score(quality)[0]
+                        for quality in self.memory[position][c.VCF_SNVS][allele]
+                    ]
+                    for allele in self.memory[position][c.VCF_SNVS].keys()
+                }
+
+                snvs_tuples = [(key, value) for key in snvs2 for value in snvs2[key]]
+            
+                
                 # MAGIC HAPPENS HERE 
                 genotype_likelihoods = {
-                allele: u.get_likelihood((allele, value))
+                allele: u.get_likelihood(snvs_tuples)[1]
                 for (allele, value) in snvs_tuples
                 }
-                
-                print('_____')
 
+                values_list = list(genotype_likelihoods.values())
+
+                your_array = values_list[0]
+
+                #print(your_array[0])
+                print(genotype_likelihoods)
+                #print(list(genotype_likelihoods.values()))
+                print('__________')
+                
+                genotype_likelihoods = {
+                    allele: u.genotype_likelihood2(allele, snvs)
+                    for allele in snvs.keys()
+                }
+
+                
+                
                 #print((self.memory[3940]), '\n')
 
-                sum_genotype_likelihoods = 23 #functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
+                sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
                 #print('SUM GENOTYPE', sum_genotype_likelihoods)
                 sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
@@ -149,10 +170,10 @@ class LiveVariantCaller:
                     ]
 
                     if all(filter_constrains):
-                        genotypeLikelihood = genotype_likelihoods[allele]
+                        genotype_likelihood = genotype_likelihoods[allele]
 
-                        if genotypeLikelihood != 0:
-                            gl = math.log10(genotypeLikelihood)
+                        if genotype_likelihood != 0:
+                            gl = math.log10(genotype_likelihood)
                             pl = round(-10.0 * gl)
                         else:
                             gl = 0
