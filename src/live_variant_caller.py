@@ -131,34 +131,22 @@ class LiveVariantCaller:
 
                 snvs_tuples = [(key, value) for key in snvs2 for value in snvs2[key]]
             
-                
                 # MAGIC HAPPENS HERE 
-                genotype_likelihoods = {
-                allele: u.get_likelihood(snvs_tuples)[1]
-                for (allele, value) in snvs_tuples
-                }
 
-                values_list = list(genotype_likelihoods.values())
+                if len(snvs_tuples) > 0:
+                    x = u.get_likelihood(snvs_tuples)
 
-                your_array = values_list[0]
-
-                #print(your_array[0])
-                print(genotype_likelihoods)
-                #print(list(genotype_likelihoods.values()))
-                print('__________')
+                    genotype_likelihoods = u.extract_base_likelihood(x, snvs_tuples, snvs)
                 
-                genotype_likelihoods = {
-                    allele: u.genotype_likelihood2(allele, snvs)
-                    for allele in snvs.keys()
-                }
+                    print(genotype_likelihoods)
+                #genotype_likelihoodsss = {
+                #    allele: u.genotype_likelihood2(allele, snvs)
+                #   for allele in snvs.keys()
+                #}
 
-                
-                
-                #print((self.memory[3940]), '\n')
-
-                sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
-                #print('SUM GENOTYPE', sum_genotype_likelihoods)
-                sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
+               
+                    sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
+                    sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
 
                 for allele in snvs.keys():
                     allele_depth = len(snvs[allele])

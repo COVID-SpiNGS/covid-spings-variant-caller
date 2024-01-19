@@ -48,7 +48,7 @@ def main():
     # 
     # live_variant_caller.process_bam('input/real/input_005.bam')
     # print('5', time.time() - start)
-    # 
+    # ht
     # live_variant_caller.process_bam('input/real/input_006.bam')
     # print('6', time.time() - start)
     # 

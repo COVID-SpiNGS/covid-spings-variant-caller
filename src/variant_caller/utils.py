@@ -21,28 +21,32 @@ def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]):
         if allele != hypothesis
     }.values(), 1.0)
 
-    return hypothesis_value * non_hypothesis_value
+    return round(hypothesis_value * non_hypothesis_value, 2)
 
 
 ## Christians code
 
-index_dict = {'A':0 , 'G': 1, 'C':2, 'T': 3}
+index_dict = {'A':0 , 'C': 1, 'G':2, 'T': 3}
 
 def get_likelihood(results):
-    num = np.prod(list(map(get_likelihood1,results)),axis=0)
-    return results[0], num/np.sum(num)
+    num = np.prod(list(map(get_likelihood_for_read,results)),axis=0)
+    return num/np.sum(num)
 
-def update_dist(prior,likelihood):
-    posterior = prior*likelihood/np.sum(prior*likelihood)
-    return posterior
-
-def get_likelihood1(read):
-    
+def get_likelihood_for_read(read):
     base,score = read
     prob = 10**(-score)
     likelihood = np.ones((4,))*prob/3
-    #print("likelihood", likelihood)
     likelihood[index_dict[base]] = 1-prob
     return likelihood
+
+def extract_base_likelihood(likelihood_array, snvs_tuples, snvs):
+    #print("LA", likelihood_array, type(likelihood_array))
+    if isinstance(likelihood_array, np.ndarray):
+        x = {key: likelihood_array[value] for key, value in index_dict.items()}
+        #print("LA", likelihood_array, len(likelihood_array))
+        return x
+    elif np.isnan(likelihood_array).any():
+        print(type(likelihood_array), snvs_tuples, snvs)
+
 
 
