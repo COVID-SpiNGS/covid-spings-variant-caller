@@ -131,22 +131,15 @@ class LiveVariantCaller:
 
                 snvs_tuples = [(key, value) for key in snvs2 for value in snvs2[key]]
             
-                # MAGIC HAPPENS HERE 
-
+                # MAGIC HAPPENS HERE
                 if len(snvs_tuples) > 0:
                     x = u.get_likelihood(snvs_tuples)
 
                     genotype_likelihoods = u.extract_base_likelihood(x, snvs_tuples, snvs)
-                
-                    print(genotype_likelihoods)
-                #genotype_likelihoodsss = {
-                #    allele: u.genotype_likelihood2(allele, snvs)
-                #   for allele in snvs.keys()
-                #}
 
-               
                     sum_genotype_likelihoods = functools.reduce(operator.add, genotype_likelihoods.values(), 0.0)
                     sum_genotype_likelihoods = sum_genotype_likelihoods if sum_genotype_likelihoods != 0 else 1.0
+                    
 
                 for allele in snvs.keys():
                     allele_depth = len(snvs[allele])
@@ -159,18 +152,23 @@ class LiveVariantCaller:
 
                     if all(filter_constrains):
                         genotype_likelihood = genotype_likelihoods[allele]
-
+                        
                         if genotype_likelihood != 0:
-                            gl = math.log10(genotype_likelihood)
-                            pl = round(-10.0 * gl)
+                            gl = genotype_likelihood
+                            pl = u.to_phred_score(gl) #round(-10.0 * gl)
                         else:
                             gl = 0
                             pl = 0
 
-                        # MAGIC HAPPENS HERE TOO I GUESS ?
+                        # MAGIC HAPPENS HERE TOO
                         score = u.to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
-                        qual = np.mean(snvs[allele])
+                        
+                        #qual = np.round(np.mean(snvs[allele])*100000, 2)
 
+                        qual = u.to_phred_score(genotype_likelihoods[allele]) 
+                        
+                        if qual > 99:
+                            qual = 64
                         variants.append({
                             c.VCF_START: position,
                             c.VCF_STOP: position + 1,

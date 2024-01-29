@@ -24,13 +24,17 @@ def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]):
     return round(hypothesis_value * non_hypothesis_value, 2)
 
 
-## Christians code
+## Christians code - Bayessian probability
 
 index_dict = {'A':0 , 'C': 1, 'G':2, 'T': 3}
 
 def get_likelihood(results):
     num = np.prod(list(map(get_likelihood_for_read,results)),axis=0)
-    return num/np.sum(num)
+
+    if not np.all(results == 0) and not np.all(results == 'nan') and np.sum(num) != 0:
+        return num/np.sum(num) 
+    
+    return num
 
 def get_likelihood_for_read(read):
     base,score = read
@@ -40,13 +44,12 @@ def get_likelihood_for_read(read):
     return likelihood
 
 def extract_base_likelihood(likelihood_array, snvs_tuples, snvs):
-    #print("LA", likelihood_array, type(likelihood_array))
+    
     if isinstance(likelihood_array, np.ndarray):
         x = {key: likelihood_array[value] for key, value in index_dict.items()}
-        #print("LA", likelihood_array, len(likelihood_array))
         return x
-    elif np.isnan(likelihood_array).any():
-        print(type(likelihood_array), snvs_tuples, snvs)
+    else:
+            print(type(likelihood_array), likelihood_array, snvs_tuples, snvs)
 
 
 
