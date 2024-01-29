@@ -17,6 +17,13 @@ logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
 class VCServer:
     """
     Class of Variant Caller server
+
+    Attributes:
+            host (str): The host address obtained from 'config_io'.
+            port (int): The port number obtained from 'config_io'.
+            queue_size (int): The size of the task queue, obtained from 'config_io'.
+            task_queue (VCQueue): An instance of 'VCQueue' initialized with the 'queue_size'.
+
     """
 
     def __init__(self):

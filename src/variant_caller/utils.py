@@ -6,14 +6,51 @@ import math
 
 from typing import Dict, List
 
+
 def from_phred_score(score: float) -> float:
+    """
+       Converts a Phred quality score to its corresponding error probability.
+
+       Args:
+           score (float): The Phred quality score.
+
+       Returns:
+           tuple: A tuple containing the original score and its error probability.
+
+       The Phred quality score is a measure used in sequencing technologies to indicate the quality of a base call. The higher the score, the lower the error probability. This function converts the Phred score to its corresponding probability of error.
+       """
     return score, math.pow(10, score / -10)
 
+
 def to_phred_score(probability: float, threshold: int = 99) -> int:
+    """
+    Converts a probability to its corresponding Phred quality score.
+
+    Args:
+        probability (float): The probability of an error.
+        threshold (int, optional): The maximum Phred score to return. Defaults to 99.
+
+    Returns:
+        int: The Phred score corresponding to the given probability.
+
+    Given a probability of error, this function computes the corresponding Phred quality score, capped at a specified threshold. The function handles cases where the probability is 0 by returning the threshold value.
+    """
     return min(round(-10 * math.log10(probability)), threshold) if probability > 0.0 else threshold
 
 
-def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]): 
+def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]):
+    """
+    Calculates the likelihood of a genotype hypothesis given allele frequencies.
+
+    Args:
+        hypothesis (str): The genotype hypothesis to be tested.
+        alleles (Dict[str, List[float]]): A dictionary mapping allele names to their frequencies.
+
+    Returns:
+        float: The likelihood of the given hypothesis.
+
+    This function computes the likelihood of a specific genotype hypothesis. It multiplies the probability of the hypothesis allele being correct by the product of the probabilities of each non-hypothesis allele being incorrect.
+    """
     hypothesis_value = (1.0 - np.array(alleles[hypothesis])).prod()
     non_hypothesis_value = functools.reduce(operator.mul, {
         allele: np.array(alleles[allele]).prod()
@@ -26,30 +63,64 @@ def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]):
 
 ## Christians code - Bayessian probability
 
-index_dict = {'A':0 , 'C': 1, 'G':2, 'T': 3}
+index_dict = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
+
 
 def get_likelihood(results):
-    num = np.prod(list(map(get_likelihood_for_read,results)),axis=0)
+    """
+    Calculates the overall likelihood of a set of sequencing reads.
+
+    Args:
+        results (list): A list of tuples representing sequencing reads. Each tuple contains a base (str) and a corresponding quality score (int).
+
+    Returns:
+        np.ndarray: An array representing the normalized likelihood of each base (A, C, G, T) across all reads.
+
+    The function computes the product of the likelihoods for each read (using `get_likelihood_for_read`) and then normalizes this product to sum to 1, unless all values in 'results' are 0 or 'nan', in which case it returns the unnormalized product.
+    """
+    num = np.prod(list(map(get_likelihood_for_read, results)), axis=0)
 
     if not np.all(results == 0) and not np.all(results == 'nan') and np.sum(num) != 0:
-        return num/np.sum(num) 
-    
+        return num / np.sum(num)
+
     return num
 
+
 def get_likelihood_for_read(read):
-    base,score = read
-    prob = 10**(-score)
-    likelihood = np.ones((4,))*prob/3
-    likelihood[index_dict[base]] = 1-prob
+    """
+    Calculates the likelihood of a single read.
+
+    Args:
+        read (tuple): A tuple containing a base (str) and a quality score (int).
+
+    Returns:
+        np.ndarray: An array of likelihoods for each possible base (A, C, G, T).
+
+    This function uses the provided quality score to calculate the likelihood of each base being the correct one. The 'index_dict' is expected to map base characters to their respective indices in the likelihood array.
+     """
+    base, score = read
+    prob = 10 ** (-score)
+    likelihood = np.ones((4,)) * prob / 3
+    likelihood[index_dict[base]] = 1 - prob
     return likelihood
 
+
 def extract_base_likelihood(likelihood_array, snvs_tuples, snvs):
-    
+    """
+    Extracts the likelihood of specific bases from a likelihood array.
+
+    Args:
+        likelihood_array (np.ndarray): An array of likelihoods for each base.
+        snvs_tuples (list): Not used in the function but passed as an argument.
+        snvs (list): Not used in the function but passed as an argument.
+
+    Returns:
+        dict: A dictionary mapping bases to their respective likelihoods if 'likelihood_array' is an ndarray, otherwise prints the type and content of 'likelihood_array', along with 'snvs_tuples' and 'snvs'.
+
+    This function maps the likelihoods from the array to their corresponding bases using the 'index_dict'. If 'likelihood_array' is not an ndarray, it provides debugging information.
+    """
     if isinstance(likelihood_array, np.ndarray):
         x = {key: likelihood_array[value] for key, value in index_dict.items()}
         return x
     else:
-            print(type(likelihood_array), likelihood_array, snvs_tuples, snvs)
-
-
-
+        print(type(likelihood_array), likelihood_array, snvs_tuples, snvs)

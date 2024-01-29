@@ -21,7 +21,7 @@ class Watcher:
     Class that handles watching a directory for changes
     """
 
-    def __init__(self, directory):
+    def __init__(self, directory: str):
         """
         Constructor for Watcher class
         @param directory: relative or absolute path to directory to be watched
@@ -56,7 +56,7 @@ class SeqHandler(FileSystemEventHandler):
     Handler class for Watcher, containing logic for handling changes in file system
     """
 
-    def __init__(self, client, supported_extensions):
+    def __init__(self, client: VCClient, supported_extensions: list[str]):
         """
         Constructor for SeqHandler
         @param client: instance of VCClient

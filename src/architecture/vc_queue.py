@@ -123,7 +123,7 @@ class VCQueue:
     def _process_bam(self, file_path: str):
         """
         Function acting as wrapper for variant caller's function to process BAM file
-        @param path: path to BAM file
+        @param file_path: path to BAM file
         """
         logging.info(f'Processing BAM with path {file_path}')
         abs_path = os.path.dirname(file_path)

@@ -19,9 +19,16 @@ parser = argparse.ArgumentParser()
 class VCClient:
     """
     Class of Variant Caller client
+
+    This class represents a client that connects to a Variant Caller service. It is used to interact with the VC server.
+
+    Attributes:
+        host (str): The host address of the Variant Caller server.
+        port (int): The port number on which the Variant Caller server is listening.
+
     """
 
-    def __init__(self, host, port):
+    def __init__(self, host: str, port: int):
         """
         Constructor for client
         @param host: host address
@@ -48,6 +55,7 @@ class VCClient:
         except ConnectionRefusedError:
             log.print_and_log(f'Not able to connect to {self.host}:{self.port}. Is server running?', log.ERROR)
 
+
 def _construct_cli():
     """
     Function that creates command line interface
@@ -55,7 +63,6 @@ def _construct_cli():
     parser.add_argument('-p', '--process', help='run or stop', nargs='+')
     parser.add_argument('-w', '--write', help='run or stop', nargs='+')
     parser.add_argument('-st', '--stop', help='run or stop', action='store_true')
-
 
 
 def _params_is_valid(action: str, path: str) -> bool:

@@ -21,4 +21,5 @@ class VCException(Exception):
         Function to stringify exception
         @return: str representation of exception
         """
-        return f'The provided queue size ({self.queue_size}) is not in a valid range {self.min_queue_size, self.max_queue_size}'
+        return f'The provided queue size ({self.queue_size}) is not in a valid range ' \
+               f'{self.min_queue_size, self.max_queue_size} '
