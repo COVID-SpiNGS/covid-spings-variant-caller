@@ -273,15 +273,12 @@ class LiveVariantCaller:
                             gl = 0
                             pl = 0
 
-                        # MAGIC HAPPENS HERE TOO
+                        # MAGIC HAPPENS HERE TOO - But no idea how and why this happens?
                         score = u.to_phred_score(1.0 - (genotype_likelihoods[allele] / sum_genotype_likelihoods))
 
-                        # qual = np.round(np.mean(snvs[allele])*100000, 2)
-
+                        # Very basic implementation 
                         qual = u.to_phred_score(genotype_likelihoods[allele])
 
-                        if qual > 99:
-                            qual = 64
                         variants.append({
                             c.VCF_START: position,
                             c.VCF_STOP: position + 1,

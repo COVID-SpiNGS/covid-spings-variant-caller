@@ -15,15 +15,11 @@ def from_phred_score(score: float) -> float:
     @type score: float
     @return: A tuple containing the original score and its error probability.
     @rtype: tuple
-
-    The Phred quality score is a measure used in sequencing technologies to indicate the
-    quality of a base call. The higher the score, the lower the error probability. This
-    function converts the Phred score to its corresponding probability of error.
     """
-    return math.pow(10, score / -10)
+    return  math.pow(10, -score / 10)
 
 
-def to_phred_score(probability: float, threshold: int = 99) -> int:
+def to_phred_score(probability: float, threshold: int = 64) -> int:
     """
     Converts a probability to its corresponding Phred quality score.
 
@@ -33,12 +29,8 @@ def to_phred_score(probability: float, threshold: int = 99) -> int:
     @type threshold: int, optional
     @return: The Phred score corresponding to the given probability.
     @rtype: int
-
-    Given a probability of error, this function computes the corresponding Phred quality
-    score, capped at a specified threshold. The function handles cases where the probability
-    is 0 by returning the threshold value.
     """
-    return min(round(-10 * math.log10(probability)), threshold) if probability > 0.0 else threshold
+    return min(-10 * math.log10(math.pow(10, -probability / 10)), threshold) 
 
 
 def genotype_likelihood_old(hypothesis: str, alleles: Dict[str, List[float]]):
