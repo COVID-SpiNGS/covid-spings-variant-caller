@@ -9,47 +9,52 @@ from typing import Dict, List
 
 def from_phred_score(score: float) -> float:
     """
-       Converts a Phred quality score to its corresponding error probability.
+    Converts a Phred quality score to its corresponding error probability.
 
-       Args:
-           score (float): The Phred quality score.
+    @param score: The Phred quality score.
+    @type score: float
+    @return: A tuple containing the original score and its error probability.
+    @rtype: tuple
 
-       Returns:
-           tuple: A tuple containing the original score and its error probability.
-
-       The Phred quality score is a measure used in sequencing technologies to indicate the quality of a base call. The higher the score, the lower the error probability. This function converts the Phred score to its corresponding probability of error.
-       """
-    return score, math.pow(10, score / -10)
+    The Phred quality score is a measure used in sequencing technologies to indicate the
+    quality of a base call. The higher the score, the lower the error probability. This
+    function converts the Phred score to its corresponding probability of error.
+    """
+    return math.pow(10, score / -10)
 
 
 def to_phred_score(probability: float, threshold: int = 99) -> int:
     """
     Converts a probability to its corresponding Phred quality score.
 
-    Args:
-        probability (float): The probability of an error.
-        threshold (int, optional): The maximum Phred score to return. Defaults to 99.
+    @param probability: The probability of an error.
+    @type probability: float
+    @param threshold: The maximum Phred score to return. Defaults to 99.
+    @type threshold: int, optional
+    @return: The Phred score corresponding to the given probability.
+    @rtype: int
 
-    Returns:
-        int: The Phred score corresponding to the given probability.
-
-    Given a probability of error, this function computes the corresponding Phred quality score, capped at a specified threshold. The function handles cases where the probability is 0 by returning the threshold value.
+    Given a probability of error, this function computes the corresponding Phred quality
+    score, capped at a specified threshold. The function handles cases where the probability
+    is 0 by returning the threshold value.
     """
     return min(round(-10 * math.log10(probability)), threshold) if probability > 0.0 else threshold
 
 
-def genotype_likelihood2(hypothesis: str, alleles: Dict[str, List[float]]):
+def genotype_likelihood_old(hypothesis: str, alleles: Dict[str, List[float]]):
     """
     Calculates the likelihood of a genotype hypothesis given allele frequencies.
 
-    Args:
-        hypothesis (str): The genotype hypothesis to be tested.
-        alleles (Dict[str, List[float]]): A dictionary mapping allele names to their frequencies.
+    @param hypothesis: The genotype hypothesis to be tested.
+    @type hypothesis: str
+    @param alleles: A dictionary mapping allele names to their frequencies.
+    @type alleles: dict[str, list[float]]
+    @return: The likelihood of the given hypothesis.
+    @rtype: float
 
-    Returns:
-        float: The likelihood of the given hypothesis.
-
-    This function computes the likelihood of a specific genotype hypothesis. It multiplies the probability of the hypothesis allele being correct by the product of the probabilities of each non-hypothesis allele being incorrect.
+    This function computes the likelihood of a specific genotype hypothesis. It multiplies
+    the probability of the hypothesis allele being correct by the product of the
+    probabilities of each non-hypothesis allele being incorrect.
     """
     hypothesis_value = (1.0 - np.array(alleles[hypothesis])).prod()
     non_hypothesis_value = functools.reduce(operator.mul, {
@@ -70,13 +75,13 @@ def get_likelihood(results):
     """
     Calculates the overall likelihood of a set of sequencing reads.
 
-    Args:
-        results (list): A list of tuples representing sequencing reads. Each tuple contains a base (str) and a corresponding quality score (int).
+    @param results: A list of tuples representing sequencing reads. Each tuple contains a base (str) and a corresponding quality score (int).
+    @type results: list
+    @return: An array representing the normalized likelihood of each base (A, C, G, T) across all reads.
+    @rtype: np.ndarray
 
-    Returns:
-        np.ndarray: An array representing the normalized likelihood of each base (A, C, G, T) across all reads.
-
-    The function computes the product of the likelihoods for each read (using `get_likelihood_for_read`) and then normalizes this product to sum to 1, unless all values in 'results' are 0 or 'nan', in which case it returns the unnormalized product.
+    The function computes the product of the likelihoods for each read (using `get_likelihood_for_read`) and then normalizes
+    this product to sum to 1, unless all values in 'results' are 0 or 'nan', in which case it returns the unnormalized product.
     """
     num = np.prod(list(map(get_likelihood_for_read, results)), axis=0)
 
@@ -90,14 +95,15 @@ def get_likelihood_for_read(read):
     """
     Calculates the likelihood of a single read.
 
-    Args:
-        read (tuple): A tuple containing a base (str) and a quality score (int).
+    @param read: A tuple containing a base (str) and a quality score (int).
+    @type read: tuple
+    @return: An array of likelihoods for each possible base (A, C, G, T).
+    @rtype: np.ndarray
 
-    Returns:
-        np.ndarray: An array of likelihoods for each possible base (A, C, G, T).
-
-    This function uses the provided quality score to calculate the likelihood of each base being the correct one. The 'index_dict' is expected to map base characters to their respective indices in the likelihood array.
-     """
+    This function uses the provided quality score to calculate the likelihood of each base
+    being the correct one. The 'index_dict' is expected to map base characters to their
+    respective indices in the likelihood array.
+    """
     base, score = read
     prob = 10 ** (-score)
     likelihood = np.ones((4,)) * prob / 3
@@ -109,13 +115,14 @@ def extract_base_likelihood(likelihood_array, snvs_tuples, snvs):
     """
     Extracts the likelihood of specific bases from a likelihood array.
 
-    Args:
-        likelihood_array (np.ndarray): An array of likelihoods for each base.
-        snvs_tuples (list): Not used in the function but passed as an argument.
-        snvs (list): Not used in the function but passed as an argument.
-
-    Returns:
-        dict: A dictionary mapping bases to their respective likelihoods if 'likelihood_array' is an ndarray, otherwise prints the type and content of 'likelihood_array', along with 'snvs_tuples' and 'snvs'.
+    @param likelihood_array: An array of likelihoods for each base.
+    @type likelihood_array: np.ndarray
+    @param snvs_tuples: Not used in the function but passed as an argument.
+    @type snvs_tuples: list
+    @param snvs: Not used in the function but passed as an argument.
+    @type snvs: list
+    @return: A dictionary mapping bases to their respective likelihoods if 'likelihood_array' is an ndarray, otherwise prints the type and content of 'likelihood_array', along with 'snvs_tuples' and 'snvs'.
+    @rtype: dict
 
     This function maps the likelihoods from the array to their corresponding bases using the 'index_dict'. If 'likelihood_array' is not an ndarray, it provides debugging information.
     """

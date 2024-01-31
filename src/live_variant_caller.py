@@ -237,21 +237,13 @@ class LiveVariantCaller:
             if self.memory[position][c.VCF_TOTAL_DEPTH_KEY] >= self.min_total_depth:
                 snvs = {
                     allele: [
-                        u.from_phred_score(quality)[1]
+                        quality
                         for quality in self.memory[position][c.VCF_SNVS][allele]
                     ]
                     for allele in self.memory[position][c.VCF_SNVS].keys()
                 }
 
-                snvs2 = {
-                    allele: [
-                        u.from_phred_score(quality)[0]
-                        for quality in self.memory[position][c.VCF_SNVS][allele]
-                    ]
-                    for allele in self.memory[position][c.VCF_SNVS].keys()
-                }
-
-                snvs_tuples = [(key, value) for key in snvs2 for value in snvs2[key]]
+                snvs_tuples = [(key, value) for key in snvs for value in snvs[key]]
 
                 # MAGIC HAPPENS HERE
                 if len(snvs_tuples) > 0:
