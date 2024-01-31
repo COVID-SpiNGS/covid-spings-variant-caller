@@ -6,7 +6,7 @@
 3. A) Run only variant caller with ```python -m src/main.py```
 3. B) Run variant caller with whole infrastructure (client/server) with ``` scripts/run_full.sh```
 
-
+#### Make sure, you have an in- and output directory in the root of the project. The input dir should contain a reference FASTA or FASTQ as well as an binary alignment file (BAM).
 
 
 ## Notizen

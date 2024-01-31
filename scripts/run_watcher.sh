@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 -m watcher.watcher "$1"
+python3 -m src.watcher.watcher "$1"

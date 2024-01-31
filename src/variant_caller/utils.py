@@ -30,8 +30,12 @@ def to_phred_score(probability: float, threshold: int = 64) -> int:
     @return: The Phred score corresponding to the given probability.
     @rtype: int
     """
-    return min(-10 * math.log10(math.pow(10, -probability / 10)), threshold) 
+    if not 0 <= probability <= 1:
+        raise ValueError("Probability must be between 0 and 1")
 
+    phred_score = min(round(-10 * math.log10(probability)), threshold) if probability > 0.0 else threshold
+
+    return phred_score
 
 def genotype_likelihood_old(hypothesis: str, alleles: Dict[str, List[float]]):
     """
