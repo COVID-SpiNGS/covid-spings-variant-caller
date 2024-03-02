@@ -1,5 +1,7 @@
 # Live Variant Caller
 
+This repository is a live variant caller that let's you run variant calling in real-time.
+
 ## Installation
 1. Clone repo and enter directory
 2. Install required dependencies with ```pipenv install -r requirements.txt```
@@ -7,6 +9,8 @@
 3. B) Run variant caller with whole infrastructure (client/server) with ``` scripts/run_full.sh```
 
 #### Make sure, you have an in- and output directory in the root of the project. The input dir should contain a reference FASTA or FASTQ as well as an binary alignment file (BAM).
+
+#### Alternatively, you can use ```covid-spings-pipeline``` simulation as the variant callers output. Just make sure to provide the correct paths.
 
 
 ## Notizen
