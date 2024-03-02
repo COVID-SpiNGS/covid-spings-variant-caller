@@ -1,27 +1,14 @@
 # Live Variant Caller
 
-This repository is a live variant caller that let's you run variant calling in real-time.
+This repository is a live variant caller that let's you run variant calling in real-time. 
 
 ## Installation
 1. Clone repo and enter directory
 2. Install required dependencies with ```pipenv install -r requirements.txt```
-3. A) Run only variant caller with ```python -m src/main.py```
-3. B) Run variant caller with whole infrastructure (client/server) with ``` scripts/run_full.sh```
+2a. If needed - install Pipenv.
+3. A) Run variant caller only once with ```python -m src/main.py```
+3. B) Run variant caller with whole infrastructure (client/server) with ``` scripts/run_full.sh [YOUR PATH HERE]``` - where you add your preferred path - it should be your sequencing output path.
 
-#### Make sure, you have an in- and output directory in the root of the project. The input dir should contain a reference FASTA or FASTQ as well as an binary alignment file (BAM).
+#### Make sure you have a reference FASTA or FASTQ for your genome. you can also provide a BAM-file, but this is optional.
 
-#### Alternatively, you can use ```covid-spings-pipeline``` simulation as the variant callers output. Just make sure to provide the correct paths.
-
-
-## Notizen
-
-POS = Position in der Referenz Sequenz  \\
-REF = Base in der Referenz Sequenz (bisher noch nicht rausgefunden wie ich die bekomme) \\
-DEPTH = Anzahl beruecksichtiger Reads \\
-A = Anzahl As \\
-A% = Prozentanteil von As im Verhaeltnis zur Anzahl der Reads. Oder Ergebnis der Formel zur Berechnung der Genetype lilelihood aus dem Paper https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3198575/ \\
-
-
-...Rest so wie bei A un A%
-
-
+#### Alternatively, you can use ```covid-spings-pipeline``` simulation as the variant callers output. Refer to the Installation section.
