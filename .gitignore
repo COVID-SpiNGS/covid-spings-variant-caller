@@ -243,5 +243,4 @@ log/
 *.bam
 *.bai
 *.sam
-run_full.sh
 BayesTest.py
