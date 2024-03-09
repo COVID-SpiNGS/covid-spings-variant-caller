@@ -244,3 +244,4 @@ log/
 *.bai
 *.sam
 BayesTest.py
+.ruff_cache
