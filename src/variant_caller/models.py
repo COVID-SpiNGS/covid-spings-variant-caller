@@ -15,6 +15,7 @@ class Site(TypedDict):
     @ivar indels: A dictionary that maps insertions and deletions (indels) to their respective positions. -> placeholder for the future!
     @type indels: Dict[str, List[int]]
     """
+
     reference: str
     total_depth: int
     snvs: Dict[str, List[int]]

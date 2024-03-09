@@ -15,10 +15,12 @@ import config_util.logging as log
 # except VCException:
 #   logging.error('Incorrect queue size specified.')
 
-log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
-logging.basicConfig(filename=os.path.join(log_dir, 'vc_server.log'),
-                    level=logging.DEBUG,
-                    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+log_dir = os.path.join(dirname(dirname(abspath(__file__))), "log")
+logging.basicConfig(
+    filename=os.path.join(log_dir, "vc_server.log"),
+    level=logging.DEBUG,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+)
 
 
 def _run_samtools(sam_file_path: str, abs_path: str, bam_file_name: str):
@@ -31,8 +33,13 @@ def _run_samtools(sam_file_path: str, abs_path: str, bam_file_name: str):
     # Based on command: (['samtools', 'sort', '-O', 'bam', '-o', 'sorted_test_seq.bam', 'test_seq.sam'])
 
     try:
-        pys.sort('-O', 'bam', '-o', os.path.join(abs_path, bam_file_name), sam_file_path)
-        pys.index(os.path.join(abs_path, bam_file_name), os.path.join(abs_path, bam_file_name + '.bai'))
+        pys.sort(
+            "-O", "bam", "-o", os.path.join(abs_path, bam_file_name), sam_file_path
+        )
+        pys.index(
+            os.path.join(abs_path, bam_file_name),
+            os.path.join(abs_path, bam_file_name + ".bai"),
+        )
     except Exception as e:
         log.print_and_log(e, log.ERROR)
         return
@@ -59,13 +66,15 @@ class VCQueue:
                 cio.get_min_total_depth(),
                 cio.get_min_evidence_depth(),
                 cio.get_min_evidence_ratio(),
-                cio.get_max_variants()
+                cio.get_max_variants(),
             )
             self.temp_dir = cio.get_temp_dir()
             self.output_dir = cio.get_output_dir()
-            logging.info(f'Init queue with size {size}')
+            logging.info(f"Init queue with size {size}")
         else:
-            logging.error(f'Wrong queue size: {size} - Queue size must be in range of (1, 10)!')
+            logging.error(
+                f"Wrong queue size: {size} - Queue size must be in range of (1, 10)!"
+            )
             raise VCException(size)
 
     def put(self, action: str):
@@ -83,8 +92,8 @@ class VCQueue:
         """
         self.q.put(action)
         self.current_size += 1
-        log.print_and_log(f'Added {action} to queue', log.INFO)
-        log.print_and_log(f'Current queue size: {self.q.qsize()}', log.INFO)
+        log.print_and_log(f"Added {action} to queue", log.INFO)
+        log.print_and_log(f"Current queue size: {self.q.qsize()}", log.INFO)
 
     def process(self):
         """
@@ -93,31 +102,35 @@ class VCQueue:
 
         if not self.q.empty():
             (action, path) = self.q.get()
-            log.print_and_log(f'Queue size atm is {self.q.qsize()}', log.DEBUG)
-            log.print_and_log(f'Current action is: {action}', log.DEBUG)
+            log.print_and_log(f"Queue size atm is {self.q.qsize()}", log.DEBUG)
+            log.print_and_log(f"Current action is: {action}", log.DEBUG)
 
-            daemon = threading.Thread(name='daemon_vc', target=self._process_bam, args=(path, ))
+            daemon = threading.Thread(
+                name="daemon_vc", target=self._process_bam, args=(path,)
+            )
 
-            #if action == 'process':
-                #self._process_bam(path)
+            # if action == 'process':
+            # self._process_bam(path)
 
-            if action == 'write':
-                daemon = threading.Thread(name='daemon_vc', target=self._write_vcf, args=(path, ))
+            if action == "write":
+                daemon = threading.Thread(
+                    name="daemon_vc", target=self._write_vcf, args=(path,)
+                )
                 self._write_vcf(path)
 
             self.current_size -= 1
 
             daemon.daemon = True
             daemon.start()
-            #print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
+            # print(f'Queue size atm is {self.q.qsize()} - {self.current_size}')
 
     def _write_vcf(self, path: str):
         """
         Function acting as wrapper for variant caller's function to write VCF report
         @param path: path to vcf file
         """
-        vcf_path = path.split('.bam')[0] + '.vcf'
-        log.print_and_log(f'Writing VCF to {vcf_path}', log.INFO)
+        vcf_path = path.split(".bam")[0] + ".vcf"
+        log.print_and_log(f"Writing VCF to {vcf_path}", log.INFO)
         self.live_variant_caller.write_vcf(vcf_path)
 
     def _process_bam(self, file_path: str):
@@ -125,25 +138,31 @@ class VCQueue:
         Function acting as wrapper for variant caller's function to process BAM file
         @param file_path: path to BAM file
         """
-        logging.info(f'Processing BAM with path {file_path}')
+        logging.info(f"Processing BAM with path {file_path}")
         abs_path = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
         if file_name.endswith(cio.SAM):
             file_name = file_name.split(cio.SAM)[0] + cio.BAM
         _run_samtools(file_path, abs_path, file_name)
-        checkpoint = os.path.join(self.temp_dir, file_name + cio.get_temp_file_extension())
+        checkpoint = os.path.join(
+            self.temp_dir, file_name + cio.get_temp_file_extension()
+        )
         index_file = file_name + cio.BAI
 
-        if os.path.exists(file_path) and os.path.exists(os.path.join(abs_path, index_file)):
+        if os.path.exists(file_path) and os.path.exists(
+            os.path.join(abs_path, index_file)
+        ):
             if os.path.exists(checkpoint):
-                log.print_and_log(f'Checkpoint for {file_name} found', log.DEBUG)
+                log.print_and_log(f"Checkpoint for {file_name} found", log.DEBUG)
                 self.live_variant_caller.load_checkpoint(checkpoint)
 
             self.live_variant_caller.process_bam(os.path.join(abs_path, file_name))
             self.live_variant_caller.create_checkpoint(checkpoint)
-            self.live_variant_caller.write_vcf(os.path.join(self.output_dir, file_name + cio.VCF))
+            self.live_variant_caller.write_vcf(
+                os.path.join(self.output_dir, file_name + cio.VCF)
+            )
         else:
-            log.print_and_log(f'{file_name} or {index_file} or do not exist', log.ERROR)
+            log.print_and_log(f"{file_name} or {index_file} or do not exist", log.ERROR)
 
     def length(self) -> int:
         """

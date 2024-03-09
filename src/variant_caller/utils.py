@@ -16,7 +16,7 @@ def from_phred_score(score: float) -> float:
     @return: A tuple containing the original score and its error probability.
     @rtype: tuple
     """
-    return  math.pow(10, -score / 10)
+    return math.pow(10, -score / 10)
 
 
 def to_phred_score(probability: float, threshold: int = 64) -> int:
@@ -40,6 +40,7 @@ def to_phred_score(probability: float, threshold: int = 64) -> int:
     else:
         return min(round(-10 * math.log10(1 - probability)), threshold)
 
+
 def genotype_likelihood_old(hypothesis: str, alleles: Dict[str, List[float]]):
     """
     Calculates the likelihood of a genotype hypothesis given allele frequencies.
@@ -56,18 +57,22 @@ def genotype_likelihood_old(hypothesis: str, alleles: Dict[str, List[float]]):
     probabilities of each non-hypothesis allele being incorrect.
     """
     hypothesis_value = (1.0 - np.array(alleles[hypothesis])).prod()
-    non_hypothesis_value = functools.reduce(operator.mul, {
-        allele: np.array(alleles[allele]).prod()
-        for allele in alleles
-        if allele != hypothesis
-    }.values(), 1.0)
+    non_hypothesis_value = functools.reduce(
+        operator.mul,
+        {
+            allele: np.array(alleles[allele]).prod()
+            for allele in alleles
+            if allele != hypothesis
+        }.values(),
+        1.0,
+    )
 
     return round(hypothesis_value * non_hypothesis_value, 2)
 
 
 ## Christians code - Bayessian probability
 
-index_dict = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
+index_dict = {"A": 0, "C": 1, "G": 2, "T": 3}
 
 
 def get_likelihood(results):
@@ -84,7 +89,7 @@ def get_likelihood(results):
     """
     num = np.prod(list(map(get_likelihood_for_read, results)), axis=0)
 
-    if not np.all(results == 0) and not np.all(results == 'nan') and np.sum(num) != 0:
+    if not np.all(results == 0) and not np.all(results == "nan") and np.sum(num) != 0:
         return num / np.sum(num)
 
     return num

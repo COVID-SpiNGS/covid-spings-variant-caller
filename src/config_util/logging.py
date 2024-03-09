@@ -12,10 +12,11 @@ class LogLevel(Enum):
         INFO (str): Represents an informational log level, used for logging general system or application information.
         WARNING (str): Represents a warning log level, used for logging potentially harmful situations or messages indicating caution.
     """
-    DEBUG = 'debug'
-    ERROR = 'error'
-    INFO = 'info'
-    WARNING = 'warning'
+
+    DEBUG = "debug"
+    ERROR = "error"
+    INFO = "info"
+    WARNING = "warning"
 
 
 def print_and_log(text: str, log_type: str):
@@ -28,14 +29,14 @@ def print_and_log(text: str, log_type: str):
     This function first prints the provided text to the console, prefixed with a timestamp in the format '[YYYY-MM-DD HH:MM:SS]'. It then logs the same text using Python's logging module, categorized under the specified log type. The log type determines the severity level of the log message.
 
     """
-    timestamp = strftime('[%Y-%m-%d %H:%M:%S]', localtime())
-    print(f'{timestamp} {text}')
+    timestamp = strftime("[%Y-%m-%d %H:%M:%S]", localtime())
+    print(f"{timestamp} {text}")
 
-    if log_type == 'debug':
+    if log_type == "debug":
         logging.debug(text)
-    if log_type == 'error':
+    if log_type == "error":
         logging.error(text)
-    if log_type == 'info':
+    if log_type == "info":
         logging.info(text)
-    if log_type == 'warning':
+    if log_type == "warning":
         logging.warning(text)

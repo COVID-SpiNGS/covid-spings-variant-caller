@@ -5,5 +5,5 @@ mkdir -p ./tmp
 mkdir -p ./output
 
 echo "$PWD"
-./run_server.sh &
-./run_watcher.sh "$1" &
+./scripts/run_server.sh &
+./scripts/run_watcher.sh "$1" &

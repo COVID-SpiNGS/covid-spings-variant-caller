@@ -1,19 +1,22 @@
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from client_server.live_client import VCClient
-import config_util.cio as cio
 import logging
-import time
-import sys
 import os
-from os.path import dirname, abspath
-import config_util.logging as log
+import sys
+import time
+from os.path import abspath, dirname
 
-log_dir = os.path.join(dirname(dirname(abspath(__file__))), 'log')
+from architecture.client.live_client import VCClient
+from config_util import config_io as cio
+from config_util.logging import logging as log
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
-logging.basicConfig(filename=os.path.join(log_dir, 'watcher.log'),
-                    level=logging.DEBUG,
-                    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+log_dir = os.path.join(dirname(dirname(abspath(__file__))), "log")
+
+logging.basicConfig(
+    filename=os.path.join(log_dir, "watcher.log"),
+    level=logging.DEBUG,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+)
 
 
 class Watcher:
@@ -37,10 +40,9 @@ class Watcher:
         """
         Function that runs file system watcher in selected directory
         """
-        self.observer.schedule(
-            self.handler, self.directory, recursive=self.recursive)
+        self.observer.schedule(self.handler, self.directory, recursive=self.recursive)
         self.observer.start()
-        log.print_and_log(f'Now watching directory {self.directory}', log.INFO)
+        log.print_and_log(f"Now watching directory {self.directory}", log.INFO)
         try:
             while True:
                 time.sleep(self.interval)
@@ -48,7 +50,7 @@ class Watcher:
         except:
             self.observer.stop()
         self.observer.join()
-        log.print_and_log('Watcher terminated.', log.INFO)
+        log.print_and_log("Watcher terminated.", log.INFO)
 
 
 class SeqHandler(FileSystemEventHandler):
@@ -72,27 +74,35 @@ class SeqHandler(FileSystemEventHandler):
         @param event: Any file system event
         """
         if not event.is_directory:
-            if [extension for extension in self.supported_extensions if event.src_path.endswith(extension)]:
-                if event.event_type == 'created' or event.event_type == 'modified':
-                    log.print_and_log(f'Event detector: {event.event_type} in {event.src_path}', log.INFO)
+            if [
+                extension
+                for extension in self.supported_extensions
+                if event.src_path.endswith(extension)
+            ]:
+                if event.event_type == "created" or event.event_type == "modified":
+                    log.print_and_log(
+                        f"Event detector: {event.event_type} in {event.src_path}",
+                        log.INFO,
+                    )
                     file = event.src_path
                     # stop, process, write
-                    self.client.talk_to_server('process', file)
+                    self.client.talk_to_server("process", file)
                     # self.client.talk_to_server('write', file)
 
 
-if __name__ == '__main__':
-
-    path = ''
+if __name__ == "__main__":
+    path = ""
 
     if len(sys.argv) > 0:
         path = sys.argv[1]
     else:
-        log.print_and_log(f'No path provided', log.ERROR)
+        log.print_and_log("No path provided", log.ERROR)
 
     if os.path.exists(path) and not os.path.isfile(path):
-        log.print_and_log(f'Provided path: {path}', log.INFO)
+        log.print_and_log(f"Provided path: {path}", log.INFO)
         w = Watcher(path)
         w.run()
     else:
-        log.print_and_log(f'Provided path {path} does not exist or is a file.', log.ERROR)
+        log.print_and_log(
+            f"Provided path {path} does not exist or is a file.", log.ERROR
+        )
