@@ -1,13 +1,15 @@
 import logging
 import os
 import threading
+from os.path import abspath, dirname
 from queue import Queue
-from live_variant_caller import LiveVariantCaller
-import config_util.cio as cio
-from client_server.vc_exception import VCException
-from os.path import dirname, abspath
+
 import pysam as pys
-import config_util.logging as log
+
+import src.config_util.config_io as cio
+import src.config_util.logging as log
+from src.architecture.vc_exception import VCException
+from src.variant_caller.live_variant_caller import LiveVariantCaller
 
 # try:
 # task_queue = VCQueue(queue_size)
@@ -85,7 +87,7 @@ class VCQueue:
         self.q.put(action)
         self.current_size += 1
 
-    def put(self, action: (str, str)):
+    def put(self, action: tuple[str, str]):
         """
         Add action  to queue
         @param action: tuple (action, file path) to be added to queue

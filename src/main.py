@@ -1,4 +1,4 @@
-from live_variant_caller import LiveVariantCaller
+from src.variant_caller.live_variant_caller import LiveVariantCaller
 from os.path import getsize
 
 import time

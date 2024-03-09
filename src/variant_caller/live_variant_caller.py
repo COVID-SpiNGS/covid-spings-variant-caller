@@ -1,18 +1,17 @@
 import functools
 import operator
+import pickle
+from time import localtime, strftime
 from typing import List
 
 import pysam
-
-from tqdm import tqdm
 from pysam import AlignedSegment
-from time import strftime, localtime
+from tqdm import tqdm
 
-from variant_caller.models import Site, Variant
-import variant_caller.utils as u
-import variant_caller.vcf_file_constants as c
-import pickle
-from config_util import logging as log
+import src.variant_caller.utils as u
+import src.variant_caller.vcf_file_constants as c
+from src.config_util import logging as log
+from src.variant_caller.models import Site, Variant
 
 
 class LiveVariantCaller:

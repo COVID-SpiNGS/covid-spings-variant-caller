@@ -4,9 +4,10 @@ import socket
 import time
 from os.path import abspath, dirname
 
-import config_util.logging as log
-from architecture.vc_queue import VCQueue
-from config_util import config_io as cio
+
+from src.config_util import logging as log
+from src.architecture.vc_queue import VCQueue
+from src.config_util import config_io as cio
 
 log_dir = os.path.join(dirname(dirname(abspath(__file__))), "log")
 
